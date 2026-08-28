@@ -57,6 +57,12 @@
       ]
     },
     {
+      "product": "Amulet of fury (or)",
+      "requires": [
+        "Fury ornament kit"
+      ]
+    },
+    {
       "product": "Amulet of rancour",
       "requires": [
         "Zenyte shard"
@@ -71,6 +77,7 @@
     {
       "product": "Amulet of torture (or)",
       "requires": [
+        "Torture ornament kit",
         "Zenyte shard"
       ]
     },
@@ -148,6 +155,7 @@
     {
       "product": "Armadyl godsword (or)",
       "requires": [
+        "Armadyl godsword ornament kit",
         "Armadyl hilt"
       ]
     },
@@ -257,6 +265,7 @@
     {
       "product": "Bandos godsword (or)",
       "requires": [
+        "Bandos godsword ornament kit",
         "Bandos hilt"
       ]
     },
@@ -270,6 +279,12 @@
       "product": "Belle's folly",
       "requires": [
         "Belle's folly (tarnished)"
+      ]
+    },
+    {
+      "product": "Berserker necklace (or)",
+      "requires": [
+        "Berserker necklace ornament kit"
       ]
     },
     {
@@ -523,18 +538,21 @@
     {
       "product": "Dark infinity bottoms",
       "requires": [
+        "Dark infinity colour kit",
         "Infinity bottoms"
       ]
     },
     {
       "product": "Dark infinity hat",
       "requires": [
+        "Dark infinity colour kit",
         "Infinity hat"
       ]
     },
     {
       "product": "Dark infinity top",
       "requires": [
+        "Dark infinity colour kit",
         "Infinity top"
       ]
     },
@@ -577,7 +595,8 @@
     {
       "product": "Dragon boots (g)",
       "requires": [
-        "Dragon boots"
+        "Dragon boots",
+        "Dragon boots ornament kit"
       ]
     },
     {
@@ -595,7 +614,8 @@
     {
       "product": "Dragon chainbody (g)",
       "requires": [
-        "Dragon chainbody"
+        "Dragon chainbody",
+        "Dragon chainbody ornament kit"
       ]
     },
     {
@@ -625,7 +645,8 @@
     {
       "product": "Dragon defender (t)",
       "requires": [
-        "Dragon defender"
+        "Dragon defender",
+        "Dragon defender ornament kit"
       ]
     },
     {
@@ -637,7 +658,8 @@
     {
       "product": "Dragon full helm (g)",
       "requires": [
-        "Dragon full helm"
+        "Dragon full helm",
+        "Dragon full helm ornament kit"
       ]
     },
     {
@@ -677,6 +699,7 @@
     {
       "product": "Dragon kiteshield (g)",
       "requires": [
+        "Dragon kiteshield ornament kit",
         "Dragon metal slice",
         "Shield left half"
       ]
@@ -690,7 +713,8 @@
     {
       "product": "Dragon pickaxe (upgraded)",
       "requires": [
-        "Dragon pickaxe"
+        "Dragon pickaxe",
+        "Dragon pickaxe upgrade kit"
       ]
     },
     {
@@ -704,13 +728,32 @@
       "product": "Dragon platebody (g)",
       "requires": [
         "Dragon chainbody",
-        "Dragon metal lump"
+        "Dragon metal lump",
+        "Dragon platebody ornament kit"
+      ]
+    },
+    {
+      "product": "Dragon platelegs (g)",
+      "requires": [
+        "Dragon legs/skirt ornament kit"
+      ]
+    },
+    {
+      "product": "Dragon plateskirt (g)",
+      "requires": [
+        "Dragon legs/skirt ornament kit"
       ]
     },
     {
       "product": "Dragon salvaging hook",
       "requires": [
         "Broken dragon hook"
+      ]
+    },
+    {
+      "product": "Dragon scimitar (or)",
+      "requires": [
+        "Dragon scimitar ornament kit"
       ]
     },
     {
@@ -728,6 +771,7 @@
     {
       "product": "Dragon sq shield (g)",
       "requires": [
+        "Dragon sq shield ornament kit",
         "Shield left half"
       ]
     },
@@ -853,7 +897,8 @@
       "product": "Elidinis' ward (or)",
       "requires": [
         "Arcane sigil",
-        "Elidinis' ward"
+        "Elidinis' ward",
+        "Menaphite ornament kit"
       ]
     },
     {
@@ -927,7 +972,8 @@
     {
       "product": "Frozen abyssal whip",
       "requires": [
-        "Abyssal whip"
+        "Abyssal whip",
+        "Frozen whip mix"
       ]
     },
     {
@@ -1055,6 +1101,14 @@
       ]
     },
     {
+      "product": "Granite maul (ornate handle)",
+      "requires": [
+        "Granite clamp",
+        "Granite maul",
+        "Ornate maul handle"
+      ]
+    },
+    {
       "product": "Granite ring (i)",
       "requires": [
         "Granite ring"
@@ -1109,18 +1163,21 @@
     {
       "product": "Holy ghrazi rapier",
       "requires": [
-        "Ghrazi rapier"
+        "Ghrazi rapier",
+        "Holy ornament kit"
       ]
     },
     {
       "product": "Holy sanguinesti staff",
       "requires": [
+        "Holy ornament kit",
         "Sanguinesti staff (uncharged)"
       ]
     },
     {
       "product": "Holy scythe of vitur",
       "requires": [
+        "Holy ornament kit",
         "Scythe of Vitur (uncharged)"
       ]
     },
@@ -1287,6 +1344,12 @@
       ]
     },
     {
+      "product": "Lava battlestaff (or)",
+      "requires": [
+        "Lava staff upgrade kit"
+      ]
+    },
+    {
       "product": "Light ballista",
       "requires": [
         "Monkey tail"
@@ -1295,19 +1358,22 @@
     {
       "product": "Light infinity bottoms",
       "requires": [
-        "Infinity bottoms"
+        "Infinity bottoms",
+        "Light infinity colour kit"
       ]
     },
     {
       "product": "Light infinity hat",
       "requires": [
-        "Infinity hat"
+        "Infinity hat",
+        "Light infinity colour kit"
       ]
     },
     {
       "product": "Light infinity top",
       "requires": [
-        "Infinity top"
+        "Infinity top",
+        "Light infinity colour kit"
       ]
     },
     {
@@ -1335,24 +1401,28 @@
       "requires": [
         "Malediction shard 1",
         "Malediction shard 2",
-        "Malediction shard 3"
+        "Malediction shard 3",
+        "Ward upgrade kit"
       ]
     },
     {
       "product": "Masori assembler",
       "requires": [
+        "Masori crafting kit",
         "Vorkath's head"
       ]
     },
     {
       "product": "Masori assembler max cape",
       "requires": [
+        "Masori crafting kit",
         "Vorkath's head"
       ]
     },
     {
       "product": "Masori assembler max hood",
       "requires": [
+        "Masori crafting kit",
         "Vorkath's head"
       ]
     },
@@ -1387,6 +1457,12 @@
       ]
     },
     {
+      "product": "Mystic lava staff (or)",
+      "requires": [
+        "Lava staff upgrade kit"
+      ]
+    },
+    {
       "product": "Mystic mist staff",
       "requires": [
         "Mist battlestaff"
@@ -1413,7 +1489,8 @@
     {
       "product": "Mystic steam staff (or)",
       "requires": [
-        "Steam battlestaff"
+        "Steam battlestaff",
+        "Steam staff upgrade kit"
       ]
     },
     {
@@ -1431,6 +1508,7 @@
     {
       "product": "Necklace of anguish (or)",
       "requires": [
+        "Anguish ornament kit",
         "Zenyte shard"
       ]
     },
@@ -1475,7 +1553,8 @@
     {
       "product": "Occult necklace (or)",
       "requires": [
-        "Occult necklace"
+        "Occult necklace",
+        "Occult ornament kit"
       ]
     },
     {
@@ -1491,7 +1570,8 @@
       "requires": [
         "Odium shard 1",
         "Odium shard 2",
-        "Odium shard 3"
+        "Odium shard 3",
+        "Ward upgrade kit"
       ]
     },
     {
@@ -1509,6 +1589,7 @@
     {
       "product": "Osmumten's fang (or)",
       "requires": [
+        "Cursed phalanx",
         "Osmumten's fang"
       ]
     },
@@ -1617,12 +1698,32 @@
     {
       "product": "Rune defender (t)",
       "requires": [
-        "Rune defender"
+        "Rune defender",
+        "Rune defender ornament kit"
+      ]
+    },
+    {
+      "product": "Rune scimitar (guthix)",
+      "requires": [
+        "Rune scimitar ornament kit (Guthix)"
+      ]
+    },
+    {
+      "product": "Rune scimitar (saradomin)",
+      "requires": [
+        "Rune scimitar ornament kit (Saradomin)"
+      ]
+    },
+    {
+      "product": "Rune scimitar (zamorak)",
+      "requires": [
+        "Rune scimitar ornament kit (Zamorak)"
       ]
     },
     {
       "product": "Sanguine scythe of vitur",
       "requires": [
+        "Sanguine ornament kit",
         "Scythe of Vitur (uncharged)"
       ]
     },
@@ -1653,6 +1754,7 @@
     {
       "product": "Saradomin godsword (or)",
       "requires": [
+        "Saradomin godsword ornament kit",
         "Saradomin hilt"
       ]
     },
@@ -1783,7 +1885,8 @@
     {
       "product": "Steam battlestaff (or)",
       "requires": [
-        "Steam battlestaff"
+        "Steam battlestaff",
+        "Steam staff upgrade kit"
       ]
     },
     {
@@ -1825,6 +1928,7 @@
     {
       "product": "Tormented bracelet (or)",
       "requires": [
+        "Tormented ornament kit",
         "Zenyte shard"
       ]
     },
@@ -1943,19 +2047,22 @@
     {
       "product": "Twisted ancestral hat",
       "requires": [
-        "Ancestral hat"
+        "Ancestral hat",
+        "Twisted ancestral colour kit"
       ]
     },
     {
       "product": "Twisted ancestral robe bottom",
       "requires": [
-        "Ancestral robe bottom"
+        "Ancestral robe bottom",
+        "Twisted ancestral colour kit"
       ]
     },
     {
       "product": "Twisted ancestral robe top",
       "requires": [
-        "Ancestral robe top"
+        "Ancestral robe top",
+        "Twisted ancestral colour kit"
       ]
     },
     {
@@ -1979,7 +2086,8 @@
     {
       "product": "Tzhaar-ket-om (t)",
       "requires": [
-        "Tzhaar-ket-om"
+        "Tzhaar-ket-om",
+        "Tzhaar-ket-om ornament kit"
       ]
     },
     {
@@ -2119,7 +2227,8 @@
     {
       "product": "Volcanic abyssal whip",
       "requires": [
-        "Abyssal whip"
+        "Abyssal whip",
+        "Volcanic whip mix"
       ]
     },
     {
@@ -2156,6 +2265,7 @@
     {
       "product": "Zamorak godsword (or)",
       "requires": [
+        "Zamorak godsword ornament kit",
         "Zamorak hilt"
       ]
     },
