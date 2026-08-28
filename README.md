@@ -104,11 +104,15 @@ knows the party passphrase cannot inject unlocks or Grit.
 | `!tbrecent` | five most recent unlocks |
 | `!tbclog` | collection log data status (pages/items loaded) |
 
-## Development
+## Running it
+
+Requires a **JDK 11 or newer** — grab one from [adoptium.net](https://adoptium.net)
+and enable *"Set JAVA_HOME variable"* in the installer (reopen your terminal
+afterwards). Then, from the repo folder:
 
 ```
+./gradlew runPlugin  # launch a RuneLite client with the plugin loaded
 ./gradlew build      # compile + tests
-./gradlew runPlugin  # launch a dev RuneLite client with the plugin loaded
 ```
 
 ## Credits
