@@ -880,6 +880,16 @@ public class CrabmanModePlugin extends Plugin {
                 java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR);
         g.drawImage(cropped, (BADGE_SIZE - w) / 2, (BADGE_SIZE - h) / 2, w, h, null);
         g.dispose();
+        // getImageIndexedSprite drops every pixel that is not FULLY opaque
+        // (a == 0xFF), and smooth scaling leaves mostly semi-transparent
+        // pixels - harden the alpha channel or the badge erodes to nothing.
+        for (int y = 0; y < BADGE_SIZE; y++) {
+            for (int x = 0; x < BADGE_SIZE; x++) {
+                int argb = badge.getRGB(x, y);
+                int alpha = (argb >>> 24) & 0xFF;
+                badge.setRGB(x, y, alpha >= 100 ? (argb | 0xFF000000) : 0);
+            }
+        }
         return badge;
     }
 
