@@ -51,6 +51,12 @@ public class DropAttributionService {
     private static final int CORRELATION_WINDOW_TICKS = 4;
     /** Retention for the recently-resolved item map. */
     private static final int RESOLVED_RETENTION_TICKS = 10;
+    /**
+     * How long a page-linked kill can attribute possession gains OF THAT
+     * PAGE'S ITEMS - long enough for kill-then-loot designs (Gauntlet chest),
+     * safe because the item must belong to the killed NPC's page.
+     */
+    private static final int KILL_ATTRIBUTION_TICKS = 50;
     /** A chest reopened with the identical item multiset within this window is ignored. */
     private static final long CHEST_FINGERPRINT_RETENTION_MS = 10 * 60_000L;
 
@@ -206,7 +212,7 @@ public class DropAttributionService {
         int tick = client.getTickCount();
         recentlyResolved.values().removeIf(t -> tick - t > RESOLVED_RETENTION_TICKS);
         recentServerLootTicks.values().removeIf(t -> tick - t > RESOLVED_RETENTION_TICKS);
-        recentKillPages.values().removeIf(t -> tick - t > RESOLVED_RETENTION_TICKS);
+        recentKillPages.values().removeIf(t -> tick - t > KILL_ATTRIBUTION_TICKS);
 
         Iterator<PendingNotification> it = pendingNotifications.iterator();
         while (it.hasNext()) {
@@ -243,11 +249,6 @@ public class DropAttributionService {
     private void processLoot(String sourceName, Collection<Integer> itemIds) {
         Optional<ClogPage> page = clogData.resolveSourceName(sourceName);
         int tick = client.getTickCount();
-        if (!page.isPresent() && ACQUISITION_SOURCE.equals(sourceName)) {
-            // Direct-to-inventory rewards (Shayzien ring armour) attribute to
-            // a just-killed page-linked NPC so trial grit can pay out.
-            page = recentKillPage(tick);
-        }
         for (int itemId : itemIds) {
             if (!clogData.isClogItem(itemId)) {
                 continue;
@@ -257,14 +258,19 @@ public class DropAttributionService {
                 continue; // duplicate event for the same acquisition
             }
             String pageName = page.map(ClogPage::getName).orElse(null);
-            if (pageName == null && !ACQUISITION_SOURCE.equals(sourceName)) {
-                // A real loot event containing an item unique to ONE page is
-                // self-attributing - no alias needed. (Possession-path gains
-                // must not use this: craftable clog items like Shayzien
-                // armour would become a grit printing press.)
-                Set<ClogPage> itemPages = clogData.getPagesForItem(itemId);
-                if (itemPages.size() == 1) {
-                    pageName = itemPages.iterator().next().getName();
+            if (pageName == null) {
+                if (ACQUISITION_SOURCE.equals(sourceName)) {
+                    // Possession gains attribute to a recent page-linked kill,
+                    // but only when the item belongs to that page (so smithing
+                    // Shayzien armour near the ring cannot print grit).
+                    pageName = recentKillPageContaining(itemId, tick);
+                } else {
+                    // A real loot event containing an item unique to ONE page
+                    // is self-attributing - no alias needed.
+                    Set<ClogPage> itemPages = clogData.getPagesForItem(itemId);
+                    if (itemPages.size() == 1) {
+                        pageName = itemPages.iterator().next().getName();
+                    }
                 }
             }
             emit(itemId, pageName, sourceName, tick);
@@ -274,17 +280,21 @@ public class DropAttributionService {
         }
     }
 
-    /** The most recent page-linked kill within the correlation window. */
-    private Optional<ClogPage> recentKillPage(int tick) {
+    /** The most recent kill within the window whose page contains this item, or null. */
+    private String recentKillPageContaining(int itemId, int tick) {
         String bestPage = null;
         int bestTick = Integer.MIN_VALUE;
         for (Map.Entry<String, Integer> entry : recentKillPages.entrySet()) {
-            if (tick - entry.getValue() <= CORRELATION_WINDOW_TICKS && entry.getValue() > bestTick) {
+            if (tick - entry.getValue() > KILL_ATTRIBUTION_TICKS || entry.getValue() <= bestTick) {
+                continue;
+            }
+            Optional<ClogPage> page = clogData.getPage(entry.getKey());
+            if (page.isPresent() && page.get().getItemIds().contains(itemId)) {
                 bestPage = entry.getKey();
                 bestTick = entry.getValue();
             }
         }
-        return bestPage == null ? Optional.empty() : clogData.getPage(bestPage);
+        return bestPage;
     }
 
     private void emit(int itemId, String pageName, String sourceName, int tick) {

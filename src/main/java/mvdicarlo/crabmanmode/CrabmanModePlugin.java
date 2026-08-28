@@ -133,6 +133,9 @@ public class CrabmanModePlugin extends Plugin {
     private ConfigManager configManager;
 
     @Inject
+    private net.runelite.client.plugins.PluginManager pluginManager;
+
+    @Inject
     private SessionState sessionState;
 
     @Inject
@@ -285,6 +288,28 @@ public class CrabmanModePlugin extends Plugin {
         if (panel != null) {
             javax.swing.SwingUtilities.invokeLater(panel::refreshAll);
         }
+        warnIfLootTrackerDisabled();
+    }
+
+    /** Some pages (Wintertodt, Tempoross, the Gauntlet) attribute via Loot Tracker events. */
+    private void warnIfLootTrackerDisabled() {
+        java.util.List<String> eventPages = trialboundTierRegistry().getEventAttributedPages();
+        if (eventPages.isEmpty()) {
+            return;
+        }
+        for (Plugin p : pluginManager.getPlugins()) {
+            if ("Loot Tracker".equals(p.getName())) {
+                if (!pluginManager.isPluginEnabled(p)) {
+                    sendChatMessage("Trialbound: enable the Loot Tracker plugin - trial credit for "
+                            + String.join(", ", eventPages) + " depends on it.");
+                }
+                return;
+            }
+        }
+    }
+
+    private mvdicarlo.crabmanmode.trial.BossTierRegistry trialboundTierRegistry() {
+        return injector.getInstance(mvdicarlo.crabmanmode.trial.BossTierRegistry.class);
     }
 
     @Provides
