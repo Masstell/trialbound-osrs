@@ -40,8 +40,6 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.swing.JOptionPane;
 
-import com.google.common.collect.ImmutableSet;
-import com.google.gson.Gson;
 import com.google.inject.Provides;
 
 import lombok.Getter;
@@ -49,7 +47,10 @@ import lombok.extern.slf4j.Slf4j;
 import mvdicarlo.crabmanmode.clog.ClogDataService;
 import mvdicarlo.crabmanmode.clog.ClogUnlockDetector;
 import mvdicarlo.crabmanmode.clog.ObtainedSyncService;
-import mvdicarlo.crabmanmode.database.DatabaseRepository;
+import mvdicarlo.crabmanmode.store.GroupStateListener;
+import mvdicarlo.crabmanmode.store.GroupStateService;
+import mvdicarlo.crabmanmode.store.TbEventRecord;
+import mvdicarlo.crabmanmode.store.UnlockSource;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.ChatPlayer;
 import net.runelite.api.Client;
@@ -63,14 +64,12 @@ import net.runelite.api.Item;
 import net.runelite.api.ItemComposition;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.MessageNode;
-import net.runelite.api.gameval.ItemID;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.NameableContainer;
 import net.runelite.api.Player;
 import net.runelite.api.WorldType;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameStateChanged;
-import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.api.events.PlayerChanged;
 import net.runelite.api.events.ScriptCallbackEvent;
 import net.runelite.api.events.ScriptPostFired;
@@ -98,7 +97,6 @@ import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.Text;
 import net.runelite.http.api.worlds.World;
 import net.runelite.http.api.worlds.WorldResult;
-import okhttp3.OkHttpClient;
 
 @Slf4j
 @PluginDescriptor(name = "Trialbound", description = "Collection-log-locked game mode: clog items are locked until obtained or purchased with Grit earned from rotating boss trials. Solo or group.", tags = {
@@ -176,10 +174,10 @@ public class CrabmanModePlugin extends Plugin {
     private CrabmanModeOverlay CrabmanModeOverlay;
 
     @Inject
-    private Gson gson;
+    private GroupStateService groupState;
 
     @Inject
-    private OkHttpClient okHttpClient;
+    private UnlockCoordinator unlockCoordinator;
 
     @Getter
     private BufferedImage unlockImage = null;
@@ -195,9 +193,39 @@ public class CrabmanModePlugin extends Plugin {
     private int bronzemanIconOffset = -1; // offset for bronzeman icon
     private boolean onSeasonalWorld;
 
-    private final DatabaseRepository databaseRepo = new DatabaseRepository();
-
     private CrabmanModePanel panel;
+
+    private final GroupStateListener groupStateListener = new GroupStateListener() {
+        @Override
+        public void onUnlocksAdded(List<TbEventRecord> unlocks) {
+            clientThread.invokeLater(() -> {
+                if (!isLoggedIntoCrabman()) {
+                    return;
+                }
+                for (TbEventRecord unlock : unlocks) {
+                    CrabmanModeOverlay.addItemUnlock(unlock.getItemId());
+                    if (unlock.getSource() == UnlockSource.PURCHASE) {
+                        sendChatMessage(unlock.getPlayer() + " has purchased an unlock: " + unlock.getItemName()
+                                + " (" + unlock.getCost() + " Grit).");
+                    } else {
+                        sendChatMessage(unlock.getPlayer() + " has unlocked a new item: " + unlock.getItemName() + ".");
+                    }
+                }
+            });
+        }
+
+        @Override
+        public void onUnlocksRemoved(List<Integer> itemIds) {
+            clientThread.invokeLater(() -> {
+                if (!isLoggedIntoCrabman()) {
+                    return;
+                }
+                for (int itemId : itemIds) {
+                    sendChatMessage("Re-locked: " + client.getItemDefinition(itemId).getName() + ".");
+                }
+            });
+        }
+    };
 
     @Provides
     CrabmanModeConfig provideConfig(ConfigManager configManager) {
@@ -208,11 +236,8 @@ public class CrabmanModePlugin extends Plugin {
     protected void startUp() throws Exception {
         super.startUp();
         onSeasonalWorld = false;
-        databaseRepo.setGson(gson);
-        databaseRepo.setHttpClient(okHttpClient);
         updateNamesBronzeman();
         updateAllowedCrabman();
-        initializeDatabase();
 
         panel = injector.getInstance(CrabmanModePanel.class);
         final BufferedImage icon = ImageUtil.loadImageResource(getClass(), "/bronzeman_icon.png");
@@ -226,10 +251,8 @@ public class CrabmanModePlugin extends Plugin {
 
         clientToolbar.addNavigation(navButton);
         loadResources();
-        databaseRepo.addItemListener((items) -> onItemsUnlocked(items));
-
-        // Add loading state listener to update UI when database state changes
-        databaseRepo.addStateListener(this::onNewDatabaseStateChanged);
+        groupState.addListener(groupStateListener);
+        initializeGroupState();
 
         overlayManager.add(CrabmanModeOverlay);
         chatCommandManager.registerCommand(GBM_UNLOCKS_STRING, this::OnUnlocksCountCommand);
@@ -241,6 +264,7 @@ public class CrabmanModePlugin extends Plugin {
         eventBus.register(dropAttributionService);
         eventBus.register(clogUnlockDetector);
         eventBus.register(trialService);
+        eventBus.register(unlockCoordinator);
         clogDataService.ensureLoaded();
 
         clientThread.invoke(() -> {
@@ -261,7 +285,8 @@ public class CrabmanModePlugin extends Plugin {
     @Override
     protected void shutDown() throws Exception {
         super.shutDown();
-        databaseRepo.close();
+        groupState.removeListener(groupStateListener);
+        groupState.close();
         overlayManager.remove(CrabmanModeOverlay);
         chatCommandManager.unregisterCommand(GBM_UNLOCKS_STRING);
         chatCommandManager.unregisterCommand(GBM_COUNT_STRING);
@@ -271,6 +296,7 @@ public class CrabmanModePlugin extends Plugin {
         eventBus.unregister(dropAttributionService);
         eventBus.unregister(clogUnlockDetector);
         eventBus.unregister(trialService);
+        eventBus.unregister(unlockCoordinator);
         clientToolbar.removeNavigation(navButton);
         clientThread.invoke(() -> {
             // Cleanup is not required after having played on a seasonal world.
@@ -289,9 +315,6 @@ public class CrabmanModePlugin extends Plugin {
             onSeasonalWorld = isSeasonalWorld(client.getWorld());
             sessionState.setSeasonalWorld(onSeasonalWorld);
             clogDataService.ensureLoaded();
-        }
-        if (e.getGameState() == GameState.LOGIN_SCREEN) {
-            databaseRepo.close();
         }
     }
 
@@ -349,22 +372,6 @@ public class CrabmanModePlugin extends Plugin {
     public void onPlayerChanged(PlayerChanged event) {
         Player player = client.getLocalPlayer();
         sessionState.setCurrentCharacter(player == null ? "" : player.getName());
-        if (player != null) {
-            String username = player.getName();
-            if (username == null || username.isEmpty()) {
-                databaseRepo.close();
-            } else if (!databaseRepo.getCurrentUser().equals(username) && username.equals(enabledCrabman)) {
-                if (!databaseRepo.isReady()) {
-                    log.info(username + " is a crabman. Initializing database.");
-                    initializeDatabase();
-                }
-            } else if (!username.equals((enabledCrabman))) {
-                log.debug("Username does not match crabman name");
-                databaseRepo.close();
-            }
-        } else {
-            databaseRepo.close();
-        }
     }
 
     @Subscribe
@@ -374,8 +381,8 @@ public class CrabmanModePlugin extends Plugin {
                 updateNamesBronzeman();
             } else if (event.getKey().equals("enableCrabman")) {
                 updateAllowedCrabman();
-            } else if (event.getKey().equals("databaseString") || event.getKey().equals("databaseTable")) {
-                initializeDatabase();
+            } else if (event.getKey().equals("partyPassphrase")) {
+                initializeGroupState();
             }
         }
     }
@@ -396,9 +403,9 @@ public class CrabmanModePlugin extends Plugin {
     public void unlockFilter(boolean showUntradeableItems, SortOption sortOption, String search) {
         List<ItemObject> filteredItems = new ArrayList<ItemObject>();
 
-        Map<Integer, UnlockedItemEntity> unlockedItems = databaseRepo.getUnlockedItems();
+        Map<Integer, TbEventRecord> unlockedItems = groupState.getUnlockedItems();
 
-        for (UnlockedItemEntity unlockedItem : unlockedItems.values()) {
+        for (TbEventRecord unlockedItem : unlockedItems.values()) {
             ItemComposition composition = client.getItemDefinition(unlockedItem.getItemId());
 
             boolean tradeable = composition.isTradeable();
@@ -412,7 +419,7 @@ public class CrabmanModePlugin extends Plugin {
             AsyncBufferedImage icon = itemManager.getImage(unlockedItem.getItemId());
 
             ItemObject item = new ItemObject(unlockedItem.getItemId(), unlockedItem.getItemName(), tradeable,
-                    unlockedItem.getAcquiredOn(), icon);
+                    unlockedItem.createdInstant(), icon);
             filteredItems.add(item);
         }
 
@@ -441,17 +448,6 @@ public class CrabmanModePlugin extends Plugin {
         panel.displayItems(filteredItems); // Redraw the panel
     }
 
-    public void onItemsUnlocked(List<UnlockedItemEntity> unlockedItems) {
-        if (!isLoggedIntoCrabman()) {
-            return;
-        }
-        unlockedItems.forEach((unlockedItem) -> {
-            CrabmanModeOverlay.addItemUnlock(unlockedItem.getItemId());
-            sendChatMessage(unlockedItem.getAcquiredBy() + " has unlocked a new item: " + unlockedItem.getItemName()
-                    + ".");
-        });
-    }
-
     public void sendChatMessage(String chatMessage) {
         final String message = new ChatMessageBuilder()
                 .append(ChatColorType.HIGHLIGHT)
@@ -466,6 +462,10 @@ public class CrabmanModePlugin extends Plugin {
     }
 
     void killSearchResults() {
+        if (!config.enforceGeBlock() || !sessionState.isActive() || !clogDataService.isLoaded()) {
+            return;
+        }
+
         Widget grandExchangeSearchResults = client.getWidget(InterfaceID.Chatbox.MES_LAYER_SCROLLCONTENTS);
 
         if (grandExchangeSearchResults == null) {
@@ -477,17 +477,17 @@ public class CrabmanModePlugin extends Plugin {
         if (children == null || children.length < 2 || children.length % 3 != 0) {
             return;
         }
-        for (int i = 0; i < children.length; i += 3) {
-            Map<Integer, UnlockedItemEntity> unlockedItems = databaseRepo.getUnlockedItems();
 
-            if (!unlockedItems.containsKey(children[i + 2].getItemId())) {
+        Map<Integer, TbEventRecord> unlockedItems = groupState.getUnlockedItems();
+        for (int i = 0; i < children.length; i += 3) {
+            int itemId = itemManager.canonicalize(children[i + 2].getItemId());
+            // Only collection log items are ever locked in Trialbound.
+            if (clogDataService.isClogItem(itemId) && !unlockedItems.containsKey(itemId)) {
                 children[i].setHidden(true);
                 children[i + 1].setOpacity(70);
                 children[i + 2].setOpacity(70);
             }
         }
-
-        panel.displayItems(new ArrayList<ItemObject>()); // Redraw the panel
     }
 
     private void updateNamesBronzeman() {
@@ -502,55 +502,19 @@ public class CrabmanModePlugin extends Plugin {
         onPlayerChanged(null);
     }
 
-    private void initializeDatabase() {
-        if (config.databaseString().isEmpty()) {
-            log.info("No SAS URL string provided.");
-            databaseRepo.close();
-            return;
-        }
-        log.info("Initializing connection");
-
-        databaseRepo.setGson(gson);
-        databaseRepo.setHttpClient(okHttpClient);
-
-        if (client.getLocalPlayer() == null || client.getLocalPlayer().getName() == null) {
-            log.error("Local player is not available, cannot initialize database repository");
-            return;
-        }
-
-        databaseRepo.initialize(config.databaseString(), client.getLocalPlayer().getName())
-                .whenComplete((result, throwable) -> {
-                    if (throwable != null) {
-                        log.error("Failed to initialize new database repository", throwable);
-                        sendChatMessage("Failed to connect to database. Check your SAS Token.");
-                    } else {
-                        log.info("New database repository initialization completed successfully");
-                    }
-
-                    // Update panel regardless of success/failure
-                    if (panel != null) {
-                        clientThread.invokeLater(() -> {
-                            panel.displayItems(new ArrayList<ItemObject>());
-                        });
-                    }
-                });
-    }
-
     /**
-     * Called when new database state changes
+     * (Re)loads the local event store for the group derived from the party
+     * passphrase. Local-first: this always succeeds; transports sync later.
      */
-    private void onNewDatabaseStateChanged(mvdicarlo.crabmanmode.database.DatabaseState.State state) {
-        log.debug("New database state changed to: {}", state);
-
+    private void initializeGroupState() {
+        String groupKey = GroupStateService.deriveGroupKey(config.partyPassphrase());
+        if (groupKey.equals(groupState.getGroupKey()) && groupState.isReady()) {
+            return;
+        }
+        groupState.initialize(groupKey);
         if (panel != null) {
-            // Update panel based on loading state
-            clientThread.invokeLater(() -> {
-                panel.displayLoadingState(state);
-            });
-
-            if (state == mvdicarlo.crabmanmode.database.DatabaseState.State.ERROR) {
-                sendChatMessage("Failed to connect to database. Check your SAS Token.");
-            }
+            javax.swing.SwingUtilities.invokeLater(() -> panel.displayStatus(
+                    "Trialbound ready: " + groupState.getUnlockedItems().size() + " unlocks loaded."));
         }
     }
 
@@ -750,20 +714,20 @@ public class CrabmanModePlugin extends Plugin {
             return;
         }
 
-        Map<Integer, UnlockedItemEntity> unlockedItems = databaseRepo.getUnlockedItems();
+        Map<Integer, TbEventRecord> unlockedItems = groupState.getUnlockedItems();
 
-        Collection<UnlockedItemEntity> unlocked = unlockedItems.values();
+        Collection<TbEventRecord> unlocked = unlockedItems.values();
         long unlockedByMe = unlocked.stream()
-                .filter((item) -> item.getAcquiredBy().equals(client.getLocalPlayer().getName())).count();
+                .filter((item) -> client.getLocalPlayer().getName().equals(item.getPlayer())).count();
 
         final ChatMessageBuilder builder = new ChatMessageBuilder()
                 .append(ChatColorType.HIGHLIGHT)
                 .append("Your group has unlocked ")
                 .append(ChatColorType.NORMAL)
                 .append(Integer.toString(unlocked.size()))
-                .append("(" + unlockedByMe + " / " + unlocked.size() + ")")
+                .append(" items (" + unlockedByMe + " by you)")
                 .append(ChatColorType.HIGHLIGHT)
-                .append(" items.");
+                .append(".");
 
         String response = builder.build();
 
@@ -777,18 +741,18 @@ public class CrabmanModePlugin extends Plugin {
             return;
         }
 
-        Map<Integer, UnlockedItemEntity> unlockedItems = databaseRepo.getUnlockedItems();
+        Map<Integer, TbEventRecord> unlockedItems = groupState.getUnlockedItems();
 
-        Collection<UnlockedItemEntity> unlocked = unlockedItems.values();
+        Collection<TbEventRecord> unlocked = unlockedItems.values();
 
         final ChatMessageBuilder builder = new ChatMessageBuilder()
                 .append(ChatColorType.HIGHLIGHT)
                 .append("Your group has recently unlocked: ")
                 .append(ChatColorType.NORMAL)
                 .append(unlocked.stream()
-                        .sorted(Comparator.comparing(UnlockedItemEntity::getAcquiredOn).reversed())
+                        .sorted(Comparator.comparingLong(TbEventRecord::getCreatedOn).reversed())
                         .limit(5)
-                        .map(UnlockedItemEntity::getItemName)
+                        .map(TbEventRecord::getItemName)
                         .collect(Collectors.joining(", ")));
 
         String response = builder.build();
@@ -831,29 +795,7 @@ public class CrabmanModePlugin extends Plugin {
         if (!isLoggedIntoCrabman()) {
             return;
         }
-
-        // Get item info for user feedback before deletion
-        Map<Integer, UnlockedItemEntity> unlockedItems = databaseRepo.getUnlockedItems();
-        UnlockedItemEntity unlockedItem = unlockedItems.get(id);
-        String itemName = (unlockedItem != null) ? unlockedItem.getItemName() : "Unknown Item (ID: " + id + ")";
-        String acquiredBy = (unlockedItem != null) ? unlockedItem.getAcquiredBy() : "Unknown";
-
-        // Let repository handle existence checks - attempt deletion regardless
-        databaseRepo.deleteItem(id)
-                .whenComplete((result, throwable) -> {
-                    if (throwable != null) {
-                        log.error("Failed to delete item: " + id, throwable);
-                        sendChatMessage("Failed to delete item: " + itemName + ".");
-                    } else {
-                        sendChatMessage(acquiredBy + " has re-locked item: " + itemName + ".");
-                    }
-
-                    // Update panel
-                    if (panel != null) {
-                        clientThread.invokeLater(() -> {
-                            panel.displayItems(new ArrayList<ItemObject>());
-                        });
-                    }
-                });
+        // The relock tombstone announces itself via the group state listener.
+        groupState.relock(id);
     }
 }

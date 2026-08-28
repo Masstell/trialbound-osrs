@@ -26,8 +26,8 @@ package mvdicarlo.crabmanmode;
 
 import java.awt.Dimension;
 import java.awt.Graphics2D;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import javax.inject.Inject;
 
@@ -48,7 +48,8 @@ public class CrabmanModeOverlay extends Overlay {
     private long displayTime;
     private int displayY;
 
-    private final List<Integer> itemUnlockList;
+    // Fed from listener threads, drained on the render thread.
+    private final Queue<Integer> itemUnlockList = new ConcurrentLinkedQueue<>();
 
     @Inject
     private ItemManager itemManager;
@@ -58,7 +59,6 @@ public class CrabmanModeOverlay extends Overlay {
         super(plugin);
         this.client = client;
         this.plugin = plugin;
-        this.itemUnlockList = new ArrayList<>();
         setPosition(OverlayPosition.TOP_CENTER);
     }
 
@@ -76,7 +76,7 @@ public class CrabmanModeOverlay extends Overlay {
             return null;
         }
         if (currentUnlock == null) {
-            currentUnlock = itemUnlockList.get(0);
+            currentUnlock = itemUnlockList.peek();
             displayTime = System.currentTimeMillis();
             displayY = -20;
             return null;
@@ -90,7 +90,7 @@ public class CrabmanModeOverlay extends Overlay {
         }
 
         if (System.currentTimeMillis() > displayTime + (5000)) {
-            itemUnlockList.remove(currentUnlock);
+            itemUnlockList.poll();
             currentUnlock = null;
         }
         return null;

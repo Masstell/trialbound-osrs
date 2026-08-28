@@ -273,30 +273,9 @@ public class CrabmanModePanel extends PluginPanel {
     }
 
     /**
-     * Display loading state message
+     * Display a status message in the panel body.
      */
-    public void displayLoadingState(mvdicarlo.crabmanmode.database.DatabaseState.State state) {
-        String message;
-        switch (state) {
-            case NOT_INITIALIZED:
-                message = "Database not initialized. Please configure your SAS Token.";
-                break;
-            case INITIALIZING:
-                message = "Connecting to database...";
-                break;
-            case LOADING_DATA:
-                message = "Loading unlocked items from database...";
-                break;
-            case READY:
-                message = "Database ready! Use the 'View Items' button to see unlocked items.";
-                break;
-            case ERROR:
-                message = "Failed to connect to database. Please check your SAS Token.";
-                break;
-            default:
-                message = "Unknown database state.";
-                break;
-        }
+    public void displayStatus(String message) {
         displayMessage(message);
     }
 
