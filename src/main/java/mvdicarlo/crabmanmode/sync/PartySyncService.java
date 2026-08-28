@@ -147,7 +147,7 @@ public class PartySyncService {
         }
         int applied = groupState.mergeRemote(message.getEvents());
         if (applied > 0) {
-            log.debug("Merged {} events from {}", applied, message.getFromPlayer());
+            log.info("Merged {} events from {}", applied, message.getFromPlayer());
         }
     }
 

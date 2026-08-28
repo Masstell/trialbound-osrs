@@ -222,9 +222,12 @@ public class CrabmanModePlugin extends Plugin {
         public void onUnlocksAdded(List<TbEventRecord> unlocks) {
             clientThread.invokeLater(() -> {
                 if (!isLoggedIntoCrabman()) {
+                    log.info("Skipping unlock announcements ({} unlocks) - not logged into the Trialbound character",
+                            unlocks.size());
                     return;
                 }
                 for (TbEventRecord unlock : unlocks) {
+                    log.info("Announcing unlock: {} by {}", unlock.getItemName(), unlock.getPlayer());
                     CrabmanModeOverlay.addItemUnlock(unlock.getItemId());
                     unlockAnnouncer.announce(unlock);
                 }
