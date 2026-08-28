@@ -19,4 +19,11 @@ public interface GroupStateListener {
     /** Any grit balance changed. */
     default void onGritChanged() {
     }
+
+    /**
+     * Every event that was newly applied to the store. remoteOrigin is true
+     * when it arrived from a transport (do not re-broadcast those).
+     */
+    default void onEventsApplied(List<TbEventRecord> events, boolean remoteOrigin) {
+    }
 }

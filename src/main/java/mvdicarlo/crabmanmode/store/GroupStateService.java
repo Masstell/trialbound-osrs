@@ -118,7 +118,7 @@ public class GroupStateService {
             return;
         }
         apply(Collections.singletonList(
-                TbEventRecord.unlockDrop(itemId, itemName, currentPlayer(), System.currentTimeMillis())));
+                TbEventRecord.unlockDrop(itemId, itemName, currentPlayer(), System.currentTimeMillis())), false);
     }
 
     /** Spends pooled grit to unlock an item. */
@@ -139,7 +139,7 @@ public class GroupStateService {
         List<TbEventRecord> batch = new ArrayList<>(2);
         batch.add(TbEventRecord.unlockPurchase(itemId, itemName, player, cost, now));
         batch.add(TbEventRecord.purchaseSpend(itemId, player, cost, now));
-        apply(batch);
+        apply(batch, false);
         return PurchaseResult.SUCCESS;
     }
 
@@ -148,7 +148,7 @@ public class GroupStateService {
             return;
         }
         apply(Collections.singletonList(TbEventRecord.trialGrit(itemId, currentPlayer(), delta, trialKey,
-                multiplierPercent, System.currentTimeMillis())));
+                multiplierPercent, System.currentTimeMillis())), false);
     }
 
     /** Admin re-lock tombstone; excludes earlier unlock events for the item. */
@@ -156,7 +156,8 @@ public class GroupStateService {
         if (!ready) {
             return;
         }
-        apply(Collections.singletonList(TbEventRecord.relock(itemId, currentPlayer(), System.currentTimeMillis())));
+        apply(Collections.singletonList(TbEventRecord.relock(itemId, currentPlayer(), System.currentTimeMillis())),
+                false);
     }
 
     // --- transport merge ---
@@ -167,7 +168,7 @@ public class GroupStateService {
             return 0;
         }
         List<TbEventRecord> valid = remote.stream().filter(TbEventRecord::isValid).collect(Collectors.toList());
-        return apply(valid).size();
+        return apply(valid, true).size();
     }
 
     // --- reads (snapshots) ---
@@ -236,7 +237,7 @@ public class GroupStateService {
         return name.isEmpty() ? "unknown" : name;
     }
 
-    private List<TbEventRecord> apply(List<TbEventRecord> batch) {
+    private List<TbEventRecord> apply(List<TbEventRecord> batch, boolean remoteOrigin) {
         List<TbEventRecord> applied;
         List<TbEventRecord> addedUnlocks;
         List<Integer> removedUnlocks;
@@ -273,6 +274,7 @@ public class GroupStateService {
         }
         boolean gritChanged = applied.stream().anyMatch(e -> e.getKind() == TbEventKind.GRIT);
         for (GroupStateListener listener : listeners) {
+            listener.onEventsApplied(applied, remoteOrigin);
             if (!addedUnlocks.isEmpty()) {
                 listener.onUnlocksAdded(addedUnlocks);
             }

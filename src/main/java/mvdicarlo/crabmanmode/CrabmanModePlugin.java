@@ -183,6 +183,9 @@ public class CrabmanModePlugin extends Plugin {
     @Inject
     private mvdicarlo.crabmanmode.grit.GritService gritService;
 
+    @Inject
+    private mvdicarlo.crabmanmode.sync.PartySyncService partySyncService;
+
     @Getter
     private BufferedImage unlockImage = null;
 
@@ -271,6 +274,8 @@ public class CrabmanModePlugin extends Plugin {
         eventBus.register(trialService);
         eventBus.register(unlockCoordinator);
         eventBus.register(gritService);
+        eventBus.register(partySyncService);
+        partySyncService.startUp();
         clogDataService.ensureLoaded();
 
         clientThread.invoke(() -> {
@@ -305,6 +310,8 @@ public class CrabmanModePlugin extends Plugin {
         eventBus.unregister(trialService);
         eventBus.unregister(unlockCoordinator);
         eventBus.unregister(gritService);
+        eventBus.unregister(partySyncService);
+        partySyncService.shutDown();
         clientToolbar.removeNavigation(navButton);
         clientThread.invoke(() -> {
             // Cleanup is not required after having played on a seasonal world.
@@ -391,6 +398,7 @@ public class CrabmanModePlugin extends Plugin {
                 updateAllowedCrabman();
             } else if (event.getKey().equals("partyPassphrase")) {
                 initializeGroupState();
+                partySyncService.maybeJoinParty();
             }
         }
     }
