@@ -115,7 +115,12 @@ public interface CrabmanModeConfig extends Config {
         return true;
     }
 
-    @ConfigItem(keyName = "tradeWarning", name = "Warn on locked trade items", position = 2, description = "Show a warning when a locked collection log item appears in a player trade. Never blocks the trade.", section = enforcementSection)
+    @ConfigItem(keyName = "enforceEquipBlock", name = "Block equipping locked items", position = 2, description = "Remove Wield/Wear/Equip options on collection log items you have not unlocked.", section = enforcementSection)
+    default boolean enforceEquipBlock() {
+        return true;
+    }
+
+    @ConfigItem(keyName = "tradeWarning", name = "Warn on locked trade items", position = 3, description = "Show a warning when a locked collection log item appears in a player trade. Never blocks the trade.", section = enforcementSection)
     default boolean tradeWarning() {
         return true;
     }

@@ -124,8 +124,6 @@ public class CrabmanModePlugin extends Plugin {
     final int SELECTED_OPACITY = 200;
     final int UNSELECTED_OPACITY = 235;
 
-    private static final int GE_SEARCH_BUILD_SCRIPT = 751;
-
     @Inject
     private Client client;
 
@@ -185,6 +183,18 @@ public class CrabmanModePlugin extends Plugin {
 
     @Inject
     private mvdicarlo.crabmanmode.sync.PartySyncService partySyncService;
+
+    @Inject
+    private mvdicarlo.crabmanmode.enforcement.GeEnforcementService geEnforcementService;
+
+    @Inject
+    private mvdicarlo.crabmanmode.enforcement.EquipEnforcementService equipEnforcementService;
+
+    @Inject
+    private mvdicarlo.crabmanmode.enforcement.TradeWarningService tradeWarningService;
+
+    @Inject
+    private mvdicarlo.crabmanmode.enforcement.TradeWarningOverlay tradeWarningOverlay;
 
     @Getter
     private BufferedImage unlockImage = null;
@@ -275,6 +285,10 @@ public class CrabmanModePlugin extends Plugin {
         eventBus.register(unlockCoordinator);
         eventBus.register(gritService);
         eventBus.register(partySyncService);
+        eventBus.register(geEnforcementService);
+        eventBus.register(equipEnforcementService);
+        eventBus.register(tradeWarningService);
+        overlayManager.add(tradeWarningOverlay);
         partySyncService.startUp();
         clogDataService.ensureLoaded();
 
@@ -311,6 +325,10 @@ public class CrabmanModePlugin extends Plugin {
         eventBus.unregister(unlockCoordinator);
         eventBus.unregister(gritService);
         eventBus.unregister(partySyncService);
+        eventBus.unregister(geEnforcementService);
+        eventBus.unregister(equipEnforcementService);
+        eventBus.unregister(tradeWarningService);
+        overlayManager.remove(tradeWarningOverlay);
         partySyncService.shutDown();
         clientToolbar.removeNavigation(navButton);
         clientThread.invoke(() -> {
@@ -337,13 +355,6 @@ public class CrabmanModePlugin extends Plugin {
     public void onPluginChanged(PluginChanged e) {
         if (e.getPlugin() == this && client.getGameState() == GameState.LOGGED_IN) {
             // setupUnlockHistory();
-        }
-    }
-
-    @Subscribe
-    public void onScriptPostFired(ScriptPostFired event) {
-        if (event.getScriptId() == GE_SEARCH_BUILD_SCRIPT) {
-            killSearchResults();
         }
     }
 
@@ -475,35 +486,6 @@ public class CrabmanModePlugin extends Plugin {
                         .type(ChatMessageType.CONSOLE)
                         .runeLiteFormattedMessage(message)
                         .build());
-    }
-
-    void killSearchResults() {
-        if (!config.enforceGeBlock() || !sessionState.isActive() || !clogDataService.isLoaded()) {
-            return;
-        }
-
-        Widget grandExchangeSearchResults = client.getWidget(InterfaceID.Chatbox.MES_LAYER_SCROLLCONTENTS);
-
-        if (grandExchangeSearchResults == null) {
-            return;
-        }
-
-        Widget[] children = grandExchangeSearchResults.getDynamicChildren();
-
-        if (children == null || children.length < 2 || children.length % 3 != 0) {
-            return;
-        }
-
-        Map<Integer, TbEventRecord> unlockedItems = groupState.getUnlockedItems();
-        for (int i = 0; i < children.length; i += 3) {
-            int itemId = itemManager.canonicalize(children[i + 2].getItemId());
-            // Only collection log items are ever locked in Trialbound.
-            if (clogDataService.isClogItem(itemId) && !unlockedItems.containsKey(itemId)) {
-                children[i].setHidden(true);
-                children[i + 1].setOpacity(70);
-                children[i + 2].setOpacity(70);
-            }
-        }
     }
 
     private void updateNamesBronzeman() {
