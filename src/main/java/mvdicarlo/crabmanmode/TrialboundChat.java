@@ -20,12 +20,19 @@ public class TrialboundChat {
     }
 
     public void send(String message) {
+        send(-1, message);
+    }
+
+    /** Message prefixed with a chat mod-icon (index from ChatIconManager), or none when < 0. */
+    public void send(int imgIndex, String message) {
+        ChatMessageBuilder builder = new ChatMessageBuilder();
+        if (imgIndex >= 0) {
+            builder.img(imgIndex);
+        }
+        builder.append(ChatColorType.HIGHLIGHT).append(message);
         chatMessageManager.queue(QueuedMessage.builder()
                 .type(ChatMessageType.CONSOLE)
-                .runeLiteFormattedMessage(new ChatMessageBuilder()
-                        .append(ChatColorType.HIGHLIGHT)
-                        .append(message)
-                        .build())
+                .runeLiteFormattedMessage(builder.build())
                 .build());
     }
 }

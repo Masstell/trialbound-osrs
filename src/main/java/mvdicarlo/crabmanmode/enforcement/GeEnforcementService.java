@@ -1,7 +1,5 @@
 package mvdicarlo.crabmanmode.enforcement;
 
-import java.util.Map;
-
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -9,9 +7,6 @@ import lombok.extern.slf4j.Slf4j;
 import mvdicarlo.crabmanmode.CrabmanModeConfig;
 import mvdicarlo.crabmanmode.TrialboundChat;
 import mvdicarlo.crabmanmode.clog.ClogCacheIds;
-import mvdicarlo.crabmanmode.clog.ClogDataService;
-import mvdicarlo.crabmanmode.store.GroupStateService;
-import mvdicarlo.crabmanmode.store.TbEventRecord;
 import net.runelite.api.Client;
 import net.runelite.api.ScriptID;
 import net.runelite.api.events.MenuOptionClicked;
@@ -22,7 +17,6 @@ import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetUtil;
 import net.runelite.client.eventbus.Subscribe;
-import net.runelite.client.game.ItemManager;
 
 /**
  * Hard GE block for locked collection log items: search results are greyed
@@ -35,10 +29,7 @@ public class GeEnforcementService {
     private static final int GE_OFFER_TYPE_BUY = 0;
 
     private final Client client;
-    private final ItemManager itemManager;
     private final CrabmanModeConfig config;
-    private final ClogDataService clogData;
-    private final GroupStateService groupState;
     private final LockedItemHelper locked;
     private final TrialboundChat chat;
 
@@ -46,13 +37,10 @@ public class GeEnforcementService {
     private int warnedOfferItem = -1;
 
     @Inject
-    public GeEnforcementService(Client client, ItemManager itemManager, CrabmanModeConfig config,
-            ClogDataService clogData, GroupStateService groupState, LockedItemHelper locked, TrialboundChat chat) {
+    public GeEnforcementService(Client client, CrabmanModeConfig config, LockedItemHelper locked,
+            TrialboundChat chat) {
         this.client = client;
-        this.itemManager = itemManager;
         this.config = config;
-        this.clogData = clogData;
-        this.groupState = groupState;
         this.locked = locked;
         this.chat = chat;
     }
@@ -88,10 +76,9 @@ public class GeEnforcementService {
         if (children == null || children.length < 2 || children.length % 3 != 0) {
             return;
         }
-        Map<Integer, TbEventRecord> unlockedItems = groupState.getUnlockedItems();
         for (int i = 0; i < children.length; i += 3) {
-            int itemId = itemManager.canonicalize(children[i + 2].getItemId());
-            if (clogData.isClogItem(itemId) && !unlockedItems.containsKey(itemId)) {
+            // isLocked also catches ornament-kit variants of locked clog items.
+            if (locked.isLocked(children[i + 2].getItemId())) {
                 children[i].setHidden(true);
                 children[i + 1].setOpacity(70);
                 children[i + 2].setOpacity(70);

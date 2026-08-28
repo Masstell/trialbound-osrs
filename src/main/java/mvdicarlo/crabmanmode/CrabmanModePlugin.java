@@ -163,6 +163,9 @@ public class CrabmanModePlugin extends Plugin {
     private UnlockCoordinator unlockCoordinator;
 
     @Inject
+    private UnlockAnnouncer unlockAnnouncer;
+
+    @Inject
     private mvdicarlo.crabmanmode.grit.GritService gritService;
 
     @Inject
@@ -220,12 +223,7 @@ public class CrabmanModePlugin extends Plugin {
                 }
                 for (TbEventRecord unlock : unlocks) {
                     CrabmanModeOverlay.addItemUnlock(unlock.getItemId());
-                    if (unlock.getSource() == UnlockSource.PURCHASE) {
-                        sendChatMessage(unlock.getPlayer() + " has purchased an unlock: " + unlock.getItemName()
-                                + " (" + unlock.getCost() + " Grit).");
-                    } else {
-                        sendChatMessage(unlock.getPlayer() + " has unlocked a new item: " + unlock.getItemName() + ".");
-                    }
+                    unlockAnnouncer.announce(unlock);
                 }
             });
             refreshPanel(true, false);
@@ -238,7 +236,7 @@ public class CrabmanModePlugin extends Plugin {
                     return;
                 }
                 for (int itemId : itemIds) {
-                    sendChatMessage("Re-locked: " + client.getItemDefinition(itemId).getName() + ".");
+                    unlockAnnouncer.announceRelock(itemId, client.getItemDefinition(itemId).getName());
                 }
             });
             refreshPanel(true, false);
