@@ -18,10 +18,13 @@ public class TrialboundDigest extends PartyMemberMessage {
     private String fromPlayer;
     private Map<String, String> shards;
     private String hmac;
+    /** Plugin version; not part of the HMAC so mixed versions still sync (and warn). */
+    private String version;
 
-    public TrialboundDigest(String fromPlayer, Map<String, String> shards, String hmac) {
+    public TrialboundDigest(String fromPlayer, Map<String, String> shards, String hmac, String version) {
         this.fromPlayer = fromPlayer;
         this.shards = shards;
         this.hmac = hmac;
+        this.version = version;
     }
 }

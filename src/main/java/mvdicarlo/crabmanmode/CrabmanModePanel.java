@@ -50,7 +50,7 @@ public class CrabmanModePanel extends PluginPanel {
 
         JPanel header = new JPanel(new BorderLayout());
         header.setBackground(ColorScheme.DARK_GRAY_COLOR);
-        JLabel title = new JLabel("Trialbound");
+        JLabel title = new JLabel("Trialbound v" + TrialboundVersion.VERSION);
         title.setFont(title.getFont().deriveFont(Font.BOLD, 16f));
         header.add(title, BorderLayout.NORTH);
         statusLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);

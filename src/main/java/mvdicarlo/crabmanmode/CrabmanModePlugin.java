@@ -295,6 +295,7 @@ public class CrabmanModePlugin extends Plugin {
     @Override
     protected void startUp() throws Exception {
         super.startUp();
+        log.info("Trialbound v{} starting", TrialboundVersion.VERSION);
         onSeasonalWorld = false;
         updateNamesBronzeman();
         updateAllowedCrabman();

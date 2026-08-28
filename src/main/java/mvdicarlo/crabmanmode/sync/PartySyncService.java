@@ -15,9 +15,14 @@ import javax.inject.Singleton;
 
 import com.google.gson.Gson;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import lombok.extern.slf4j.Slf4j;
 import mvdicarlo.crabmanmode.CrabmanModeConfig;
 import mvdicarlo.crabmanmode.SessionState;
+import mvdicarlo.crabmanmode.TrialboundChat;
+import mvdicarlo.crabmanmode.TrialboundVersion;
 import mvdicarlo.crabmanmode.store.GroupStateListener;
 import mvdicarlo.crabmanmode.store.GroupStateService;
 import mvdicarlo.crabmanmode.store.TbEventRecord;
@@ -50,6 +55,10 @@ public class PartySyncService {
     private final GroupStateService groupState;
     private final SessionState sessionState;
     private final Gson gson;
+    private final TrialboundChat chat;
+
+    /** Players already warned about a version mismatch this session. */
+    private final Set<String> versionWarned = new HashSet<>();
 
     /** Outbound event queue, drained in throttled chunks on game ticks. */
     private final Deque<TbEventRecord> outbound = new ArrayDeque<>();
@@ -72,7 +81,8 @@ public class PartySyncService {
 
     @Inject
     public PartySyncService(PartyService partyService, WSClient wsClient, ClientThread clientThread,
-            CrabmanModeConfig config, GroupStateService groupState, SessionState sessionState, Gson gson) {
+            CrabmanModeConfig config, GroupStateService groupState, SessionState sessionState, Gson gson,
+            TrialboundChat chat) {
         this.partyService = partyService;
         this.wsClient = wsClient;
         this.clientThread = clientThread;
@@ -80,6 +90,7 @@ public class PartySyncService {
         this.groupState = groupState;
         this.sessionState = sessionState;
         this.gson = gson;
+        this.chat = chat;
     }
 
     public void startUp() {
@@ -161,6 +172,13 @@ public class PartySyncService {
             log.warn("Rejected Trialbound digest from '{}' - bad group password", message.getFromPlayer());
             return;
         }
+        String theirs = message.getVersion() == null ? "pre-0.2.0" : message.getVersion();
+        if (!TrialboundVersion.VERSION.equals(theirs) && versionWarned.add(message.getFromPlayer())) {
+            chat.send("Version mismatch: " + message.getFromPlayer() + " runs Trialbound v" + theirs
+                    + ", you run v" + TrialboundVersion.VERSION + " - update to the same build!");
+            log.warn("Version mismatch: {} on {}, local {}", message.getFromPlayer(), theirs,
+                    TrialboundVersion.VERSION);
+        }
         Map<String, String> mine = computeShards();
         List<TbEventRecord> toSend = new ArrayList<>();
         for (Map.Entry<String, String> entry : mine.entrySet()) {
@@ -222,7 +240,8 @@ public class PartySyncService {
         Map<String, String> shards = computeShards();
         String player = localPlayerName();
         partyService.send(new TrialboundDigest(player, shards,
-                PartyAuth.hmac(config.groupPassword(), digestPayload(player, shards))));
+                PartyAuth.hmac(config.groupPassword(), digestPayload(player, shards)),
+                TrialboundVersion.VERSION));
     }
 
     // --- helpers ---
