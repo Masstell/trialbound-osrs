@@ -28,7 +28,10 @@ public class UnlockCoordinator {
 
     @Subscribe
     public void onClogDropResolved(ClogDropResolved event) {
-        if (!sessionState.isActive() || !event.isNewlyObtained() || groupState.isUnlocked(event.getItemId())) {
+        // Any drop of a locked clog item unlocks it - including duplicates of
+        // items obtained before the group started (the slot is still locked
+        // even though the personal clog already has it).
+        if (!sessionState.isActive() || groupState.isUnlocked(event.getItemId())) {
             return;
         }
         String itemName = itemManager.getItemComposition(event.getItemId()).getName();

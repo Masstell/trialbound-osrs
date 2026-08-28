@@ -84,14 +84,19 @@ public class ClogMenuService {
 
     private void confirmPurchase(int itemId, String name, int price) {
         int pooled = groupState.getPooledGrit();
+        // Grab the game window on the client thread so the dialog parents to
+        // it - an orphan dialog can open behind the client ("nothing happens").
+        final java.awt.Component parent = client.getCanvas();
         SwingUtilities.invokeLater(() -> {
-            int choice = JOptionPane.showConfirmDialog(null,
+            java.awt.Window window = SwingUtilities.getWindowAncestor(parent);
+            int choice = JOptionPane.showConfirmDialog(window,
                     "Unlock " + name + " for " + price + " Grit?\nPooled Grit: " + pooled,
                     "Trialbound unlock", JOptionPane.OK_CANCEL_OPTION);
             if (choice != JOptionPane.OK_OPTION) {
                 return;
             }
             PurchaseResult result = gritService.purchaseUnlock(itemId, name);
+            log.info("In-clog purchase of {} ({}) -> {}", name, itemId, result);
             clientThread.invokeLater(() -> reportResult(result, name, price));
         });
     }
