@@ -58,6 +58,7 @@ public class ClogMenuService {
 
     @Subscribe
     public void onMenuOpened(MenuOpened event) {
+        logClogMenuDiagnostic(event);
         if (!sessionState.isActive() || !clogData.isLoaded()
                 || client.getVarbitValue(VarbitID.COLLECTION_POH_HOST_BOOK_OPEN) == 1) {
             return;
@@ -83,8 +84,7 @@ public class ClogMenuService {
      * Diagnostic: whenever a right-click menu opens while the collection log
      * is up, log every entry so menu-structure issues are visible in the log.
      */
-    @Subscribe(priority = -1)
-    public void onMenuOpenedDiagnostic(MenuOpened event) {
+    private void logClogMenuDiagnostic(MenuOpened event) {
         if (client.getWidget(InterfaceID.Collection.ITEMS_CONTENTS) == null) {
             return;
         }
