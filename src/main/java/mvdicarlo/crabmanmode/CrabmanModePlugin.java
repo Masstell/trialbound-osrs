@@ -167,6 +167,9 @@ public class CrabmanModePlugin extends Plugin {
     private ClogUnlockDetector clogUnlockDetector;
 
     @Inject
+    private mvdicarlo.crabmanmode.trial.TrialService trialService;
+
+    @Inject
     private net.runelite.client.eventbus.EventBus eventBus;
 
     @Inject
@@ -237,6 +240,7 @@ public class CrabmanModePlugin extends Plugin {
         eventBus.register(obtainedSyncService);
         eventBus.register(dropAttributionService);
         eventBus.register(clogUnlockDetector);
+        eventBus.register(trialService);
         clogDataService.ensureLoaded();
 
         clientThread.invoke(() -> {
@@ -266,6 +270,7 @@ public class CrabmanModePlugin extends Plugin {
         eventBus.unregister(obtainedSyncService);
         eventBus.unregister(dropAttributionService);
         eventBus.unregister(clogUnlockDetector);
+        eventBus.unregister(trialService);
         clientToolbar.removeNavigation(navButton);
         clientThread.invoke(() -> {
             // Cleanup is not required after having played on a seasonal world.
