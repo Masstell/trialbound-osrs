@@ -88,7 +88,7 @@
     { "product": "Smoke ancient sceptre", "requires": ["Ancient icon", "Smoke quartz"] },
     { "product": "Shadow ancient sceptre", "requires": ["Ancient icon", "Shadow quartz"] },
 
-    { "product": "Celestial signet", "requires": ["Celestial ring"] },
+    { "product": "Celestial signet", "requires": ["Celestial ring (uncharged)"] },
     { "product": "Guardian boots", "requires": ["Black tourmaline core"] },
     { "product": "Devout boots", "requires": ["Drake's tooth"] },
     { "product": "Boots of brimstone", "requires": ["Drake's claw"] },
@@ -100,7 +100,6 @@
     { "product": "Bone shortbow", "requires": ["Scurrius' spine"] },
     { "product": "Bone staff", "requires": ["Scurrius' spine"] },
 
-    { "product": "Saradomin's blessed sword", "requires": ["Saradomin's tear"] },
 
     { "product": "Infernal axe", "requires": ["Smouldering stone"] },
     { "product": "Infernal pickaxe", "requires": ["Smouldering stone"] },
