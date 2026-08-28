@@ -107,6 +107,7 @@ public class CrabmanModePlugin extends Plugin {
     private static final String GBM_COUNT_STRING = "!gbmcount";
     private static final String GBM_RECENT_STRING = "!gbmrecent";
     private static final String TB_CLOG_DEBUG_STRING = "!tbclog";
+    private static final String TB_GRIT_STRING = "!grit";
 
     final int COLLECTION_LOG_GROUP_ID = 621;
     final int COMBAT_ACHIEVEMENT_BUTTON = 40697877;
@@ -178,6 +179,9 @@ public class CrabmanModePlugin extends Plugin {
 
     @Inject
     private UnlockCoordinator unlockCoordinator;
+
+    @Inject
+    private mvdicarlo.crabmanmode.grit.GritService gritService;
 
     @Getter
     private BufferedImage unlockImage = null;
@@ -259,12 +263,14 @@ public class CrabmanModePlugin extends Plugin {
         chatCommandManager.registerCommand(GBM_COUNT_STRING, this::OnUnlocksCountCommand);
         chatCommandManager.registerCommand(GBM_RECENT_STRING, this::OnRecentUnlocksCommand);
         chatCommandManager.registerCommand(TB_CLOG_DEBUG_STRING, this::onClogDebugCommand);
+        chatCommandManager.registerCommand(TB_GRIT_STRING, this::onGritCommand);
 
         eventBus.register(obtainedSyncService);
         eventBus.register(dropAttributionService);
         eventBus.register(clogUnlockDetector);
         eventBus.register(trialService);
         eventBus.register(unlockCoordinator);
+        eventBus.register(gritService);
         clogDataService.ensureLoaded();
 
         clientThread.invoke(() -> {
@@ -292,11 +298,13 @@ public class CrabmanModePlugin extends Plugin {
         chatCommandManager.unregisterCommand(GBM_COUNT_STRING);
         chatCommandManager.unregisterCommand(GBM_RECENT_STRING);
         chatCommandManager.unregisterCommand(TB_CLOG_DEBUG_STRING);
+        chatCommandManager.unregisterCommand(TB_GRIT_STRING);
         eventBus.unregister(obtainedSyncService);
         eventBus.unregister(dropAttributionService);
         eventBus.unregister(clogUnlockDetector);
         eventBus.unregister(trialService);
         eventBus.unregister(unlockCoordinator);
+        eventBus.unregister(gritService);
         clientToolbar.removeNavigation(navButton);
         clientThread.invoke(() -> {
             // Cleanup is not required after having played on a seasonal world.
@@ -707,6 +715,15 @@ public class CrabmanModePlugin extends Plugin {
         int pages = clogDataService.getAllPages().size();
         int items = clogDataService.getAllClogItemIds().size();
         sendChatMessage("Trialbound clog data: " + pages + " pages, " + items + " items.");
+    }
+
+    private void onGritCommand(ChatMessage chatMessage, String message) {
+        if (!sentByPlayer(chatMessage) || !isLoggedIntoCrabman()) {
+            return;
+        }
+        String player = client.getLocalPlayer().getName();
+        sendChatMessage("Grit: " + groupState.getGritBalance(player) + " yours, "
+                + groupState.getPooledGrit() + " pooled.");
     }
 
     private void OnUnlocksCountCommand(ChatMessage chatMessage, String message) {
