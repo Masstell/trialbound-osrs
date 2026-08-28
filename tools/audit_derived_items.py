@@ -1,16 +1,29 @@
 #!/usr/bin/env python3
-"""Audit derived_items.json against the OSRS Wiki's recipe data.
+"""Generate (or audit) derived_items.json from the OSRS Wiki's recipe data.
 
-Harvests every recipe (Bucket:Recipe) and the authoritative collection log
-item list (Bucket:Collection log source) from the wiki, then reports every
-craftable product whose materials include a collection log item but which is
-not covered by src/main/resources/derived_items.json.
+Harvests every recipe (Bucket:Recipe) and the collection log list from the
+wiki, computes the transitive closure of "craftable from collection log
+items", and emits src/main/resources/derived_items.json.
 
-Usage:  python tools/audit_derived_items.py
-Writes: tools/derived_audit_report.txt
+Rules:
+- A product is GATED if every one of its recipes needs at least one gated
+  material (clog item or gated intermediate). Products with any recipe free
+  of clog materials are never locked (darts, bolts, bars...).
+- Requirements are the clog ROOTS of the chain (Echo boots -> Guardian boots
+  -> Black tourmaline core), validated against the in-game clog list
+  (~/.runelite/trialbound/clog-items.csv, written by the plugin) when
+  available, else the wiki's list.
+- EXCLUDED_MATERIALS: 100%-drop commodities that would lock huge consumable
+  trees (Zulrah's scales, firelighters...). EXCLUDED_PRODUCTS/patterns: POH
+  decorations, stuffed heads, sailing paint cosmetics, arena icons.
+
+Usage:
+  python tools/audit_derived_items.py           # report only
+  python tools/audit_derived_items.py --generate  # rewrite derived_items.json
 """
 import json
 import re
+import sys
 import time
 import urllib.parse
 import urllib.request
@@ -23,6 +36,64 @@ PAGE_SIZE = 500
 ROOT = Path(__file__).resolve().parent.parent
 DERIVED_FILE = ROOT / "src" / "main" / "resources" / "derived_items.json"
 REPORT_FILE = Path(__file__).resolve().parent / "derived_audit_report.txt"
+LOCAL_CLOG_CSV = Path.home() / ".runelite" / "trialbound" / "clog-items.csv"
+
+# Commodity clog materials that would lock big consumable/ammo trees.
+EXCLUDED_MATERIALS = {
+    "Zulrah's scales", "Sunfire splinters", "Ancient essence", "Oathplate shards",
+    "Burnt page", "Gryphon feather", "Smithing catalyst", "Ent branch",
+    "Broken antler", "Ray barbs", "Golden tench", "Star fragment",
+    "Blue firelighter", "Green firelighter", "Red firelighter",
+    "Purple firelighter", "White firelighter", "Onyx", "Granite dust",
+    "Araxyte venom sac", "Nihil shard", "Guardian's eye", "Eternal gem",
+    "Imbued heart", "Dragon nails", "Dragon metal sheet", "Log brace",
+    "Anima-infused bark", "Felling axe handle", "Zalcano shard",
+    "Dark dye", "Abyssal blue dye", "Abyssal green dye", "Abyssal red dye",
+    "Holy sandals", "Flippers", "Mole slippers",
+}
+
+# Recipe material names that differ from the clog entry they represent.
+MATERIAL_ALIASES = {
+    "Black mask": "Black mask (10)",
+}
+
+# Chains the wiki Recipe bucket does not model (enchanting), seeded into the
+# fixpoint so downstream recipes (slayer helm recolours etc.) resolve too.
+MANUAL_EXTRAS = {
+    "Slayer helmet": ["Black mask (10)"],
+    "Slayer helmet (i)": ["Black mask (10)"],
+    "Zenyte": ["Zenyte shard"],
+    "Zenyte amulet (u)": ["Zenyte shard"],
+    "Zenyte amulet": ["Zenyte shard"],
+    "Zenyte ring": ["Zenyte shard"],
+    "Zenyte necklace": ["Zenyte shard"],
+    "Zenyte bracelet": ["Zenyte shard"],
+    "Amulet of torture": ["Zenyte shard"],
+    "Necklace of anguish": ["Zenyte shard"],
+    "Ring of suffering": ["Zenyte shard"],
+    "Tormented bracelet": ["Zenyte shard"],
+}
+
+EXCLUDED_PRODUCT_PREFIXES = ("Stuffed ", "Ensouled ", "Greenman ", "Cw armour")
+EXCLUDED_PRODUCT_SUFFIXES = (" trim", " coffin", " icon", " paint", "'s flag",
+                             " theme", " (Construction)", " (Last Man Standing)",
+                             " (Trailblazer)", " (Deadman)")
+EXCLUDED_PRODUCTS = {
+    "Obsidian fence", "Obsidian decorative bench", "Gnomish firelighter",
+    "Molch pearl", "Fathom pearl", "Sturdy harness", "Beehive (Construction)",
+    "Anti-venom", "Anti-venom+", "Extended anti-venom+", "Forgotten brew",
+    "Sunfire rune", "Jug of sunfire wine", "Searing page", "Infernal blend",
+    "Cadantine blood potion (unf)", "Uncut zenyte",
+    "Godsword shards 1 & 2", "Godsword shards 1 & 3", "Godsword shards 2 & 3",
+    "Bone fragments", "Armadylean plate", "Bandosian components", "Nihil dust",
+    "Crystal acorn", "Eternal teleport crystal", "Headless arrow",
+    "Headless atlatl dart", "Amulet of the Eye", "Hat of the Eye",
+    "Robe top of the Eye", "Robe bottoms of the Eye", "Lost bag",
+    "Top hat & monocle", "Partyhat & specs", "Pirate hat & patch",
+    "Hat eyepatch", "Double eye patch", "Cavalier mask", "Beret mask",
+    "Holy moleys", "Dark flippers", "Gem sack", "Fish sack barrel",
+    "Silklined herb sack", "Clothes pouch", "Strange skull", "Runed sceptre",
+}
 
 
 def normalize(name: str) -> str:
@@ -53,56 +124,116 @@ def fetch_all(bucket: str, fields: str):
         time.sleep(0.5)
 
 
+def load_clog_names(wiki_rows):
+    """normalized -> display name; prefers the in-game export."""
+    if LOCAL_CLOG_CSV.exists():
+        names = {}
+        for line in LOCAL_CLOG_CSV.read_text(encoding="utf-8").splitlines():
+            _, _, name = line.partition(",")
+            if name:
+                names[normalize(name)] = name
+        print(f"Clog list: {len(names)} items (in-game export)")
+        return names
+    names = {normalize(r["item_name"]): r["item_name"]
+             for r in wiki_rows if r.get("item_name")}
+    print(f"Clog list: {len(names)} items (wiki; run the plugin once for the in-game export)")
+    return names
+
+
+def excluded_product(page: str) -> bool:
+    if page in EXCLUDED_PRODUCTS:
+        return True
+    if page.startswith(EXCLUDED_PRODUCT_PREFIXES):
+        return True
+    return any(page.endswith(s) for s in EXCLUDED_PRODUCT_SUFFIXES)
+
+
 def main():
+    generate = "--generate" in sys.argv
+
     print("Fetching collection log items...")
-    clog_rows = fetch_all("collection_log_source", "'item_id','item_name'")
-    clog_names = {normalize(r["item_name"]): r["item_name"]
-                  for r in clog_rows if r.get("item_name")}
-    print(f"Collection log items: {len(clog_names)}")
+    wiki_clog = fetch_all("collection_log_source", "'item_id','item_name'")
+    clog_names = load_clog_names(wiki_clog)
+    excluded_norm = {normalize(m) for m in EXCLUDED_MATERIALS}
 
     print("Fetching recipes...")
     recipe_rows = fetch_all("recipe", "'page_name','uses_material'")
 
-    # product page -> set of clog material names used by any of its recipes
-    products = {}
+    # product -> list of recipes (each a list of material names)
+    recipes = {}
     for row in recipe_rows:
         page = row.get("page_name")
         materials = row.get("uses_material") or []
-        if not page or not materials:
-            continue
-        clog_mats = {clog_names[normalize(m)] for m in materials
-                     if normalize(m) in clog_names}
-        if clog_mats:
-            products.setdefault(page, set()).update(clog_mats)
+        if page and materials:
+            recipes.setdefault(page, []).append(materials)
 
-    derived = json.loads(DERIVED_FILE.read_text(encoding="utf-8"))
-    covered = {normalize(e["product"]) for e in derived["derived"]}
+    alias_norm = {normalize(k): v for k, v in MATERIAL_ALIASES.items()}
 
-    missing, already = [], []
-    for page, mats in sorted(products.items()):
-        norm = normalize(page)
-        base = normalize(page.split(" (")[0])
-        if norm in clog_names:
-            continue  # the product is itself a clog item - locked directly
-        if norm in covered or base in covered:
-            already.append(page)
-            continue
-        missing.append((page, sorted(mats)))
+    def clog_mat_name(name):
+        """Display name of the clog item this material represents, or None."""
+        n = normalize(name)
+        if n in alias_norm:
+            aliased = alias_norm[n]
+            return aliased if normalize(aliased) in clog_names else None
+        if n in clog_names and n not in excluded_norm:
+            return clog_names[n]
+        return None
 
-    lines = [
-        f"Derived-items audit vs OSRS Wiki recipe data",
-        f"Collection log items (wiki): {len(clog_names)}",
-        f"Recipes scanned: {len(recipe_rows)}",
-        f"Products using clog materials: {len(products)}",
-        f"Covered by derived_items.json: {len(already)}",
-        f"NOT covered ({len(missing)}):",
-        "",
-    ]
-    for page, mats in missing:
-        lines.append(f"  {page}  <-  {', '.join(mats)}")
-    REPORT_FILE.write_text("\n".join(lines), encoding="utf-8")
-    print("\n".join(lines[:6]))
-    print(f"\nReport written to {REPORT_FILE}")
+    # Fixpoint: requirements[product] = clog roots, only when EVERY recipe of
+    # the product needs at least one gated material. Manual extras seed chains
+    # the Recipe bucket does not model (enchanting).
+    requirements = {}
+    for product, reqs in MANUAL_EXTRAS.items():
+        valid = [r for r in reqs if normalize(r) in clog_names]
+        if valid:
+            requirements[product] = set(valid)
+        else:
+            print(f"WARNING: manual extra '{product}' has no valid clog requirements")
+    changed = True
+    while changed:
+        changed = False
+        for page, page_recipes in recipes.items():
+            if page in requirements or excluded_product(page) or normalize(page) in clog_names:
+                continue
+            roots, all_gated = set(), True
+            for mats in page_recipes:
+                recipe_roots = set()
+                for mat in mats:
+                    clog_name = clog_mat_name(mat)
+                    if clog_name is not None:
+                        recipe_roots.add(clog_name)
+                    elif mat in requirements:
+                        recipe_roots.update(requirements[mat])
+                if not recipe_roots:
+                    all_gated = False
+                    break
+                roots.update(recipe_roots)
+            if all_gated and roots:
+                requirements[page] = roots
+                changed = True
+
+    entries = [{"product": page, "requires": sorted(reqs)}
+               for page, reqs in sorted(requirements.items())]
+
+    print(f"\nGated products: {len(entries)}")
+    if generate:
+        data = {
+            "version": 2,
+            "_comment": "GENERATED by tools/audit_derived_items.py --generate from OSRS Wiki recipe data. "
+                        "Products crafted from collection log items are locked while any listed clog item is locked. "
+                        "Edit EXCLUDED_* in the script (not this file) and regenerate.",
+            "derived": entries,
+        }
+        DERIVED_FILE.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+        print(f"Wrote {DERIVED_FILE}")
+    else:
+        current = json.loads(DERIVED_FILE.read_text(encoding="utf-8"))
+        covered = {normalize(e["product"]) for e in current["derived"]}
+        missing = [e for e in entries if normalize(e["product"]) not in covered]
+        lines = [f"Would generate {len(entries)} entries; {len(missing)} not in current file:", ""]
+        lines += [f"  {e['product']}  <-  {', '.join(e['requires'])}" for e in missing]
+        REPORT_FILE.write_text("\n".join(lines), encoding="utf-8")
+        print(f"Report written to {REPORT_FILE} ({len(missing)} missing)")
 
 
 if __name__ == "__main__":

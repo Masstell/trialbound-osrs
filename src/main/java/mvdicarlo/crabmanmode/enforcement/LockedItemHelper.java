@@ -3,9 +3,12 @@ package mvdicarlo.crabmanmode.enforcement;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import java.util.List;
+
 import mvdicarlo.crabmanmode.SessionState;
 import mvdicarlo.crabmanmode.clog.ClogDataService;
 import mvdicarlo.crabmanmode.store.GroupStateService;
+import net.runelite.api.Client;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.ItemVariationMapping;
 
@@ -17,15 +20,17 @@ public class LockedItemHelper {
     private final GroupStateService groupState;
     private final ItemManager itemManager;
     private final DerivedItemRegistry derived;
+    private final Client client;
 
     @Inject
     public LockedItemHelper(SessionState sessionState, ClogDataService clogData, GroupStateService groupState,
-            ItemManager itemManager, DerivedItemRegistry derived) {
+            ItemManager itemManager, DerivedItemRegistry derived, Client client) {
         this.sessionState = sessionState;
         this.clogData = clogData;
         this.groupState = groupState;
         this.itemManager = itemManager;
         this.derived = derived;
+        this.client = client;
     }
 
     /** True when enforcement applies at all (active character, data loaded). */
@@ -51,9 +56,11 @@ public class LockedItemHelper {
     }
 
     /**
-     * True when the item is locked: it (or its variation base) is a clog item
-     * the group has not unlocked, or it is crafted from clog items of which
-     * any is still locked (blowpipe from Tanzanite fang etc.).
+     * True when the item is locked: it (or its variation base, or the clog
+     * item its name derives from - ornament kits, trouver parchment) is a
+     * clog item the group has not unlocked, or it is crafted from clog items
+     * of which any is still locked (blowpipe from Tanzanite fang etc.).
+     * Client thread only (reads item names).
      */
     public boolean isLocked(int itemId) {
         int id = lockCheckId(itemId);
@@ -65,6 +72,30 @@ public class LockedItemHelper {
                 return true;
             }
         }
-        return false;
+        int named = clogItemByStrippedName(id);
+        return named > 0 && !groupState.isUnlocked(named);
+    }
+
+    /**
+     * Maps cosmetic/holdable variants to the clog item their name derives
+     * from by stripping trailing parentheticals: "Dragon full helm (g)" ->
+     * "Dragon full helm", "Avernic treads (pr)(et)" -> "Avernic treads".
+     * Covers ornament kits and trouver-locked forms the variation mapping
+     * misses. Returns the clog item id, or -1.
+     */
+    private int clogItemByStrippedName(int itemId) {
+        if (itemId <= 0) {
+            return -1;
+        }
+        String name = client.getItemDefinition(itemId).getName();
+        int paren;
+        while ((paren = name.lastIndexOf(" (")) > 0) {
+            name = name.substring(0, paren);
+            List<Integer> ids = clogData.getIdsForItemName(name);
+            if (!ids.isEmpty()) {
+                return ids.get(0);
+            }
+        }
+        return -1;
     }
 }

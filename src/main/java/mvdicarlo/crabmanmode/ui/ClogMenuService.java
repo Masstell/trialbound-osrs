@@ -63,16 +63,13 @@ public class ClogMenuService {
             return;
         }
         for (MenuEntry entry : event.getMenuEntries()) {
-            Widget widget = entry.getWidget();
-            if (widget == null || widget.getId() != InterfaceID.Collection.ITEMS_CONTENTS) {
+            int itemId = lockedClogItemFor(entry.getWidget());
+            if (itemId <= 0) {
                 continue;
-            }
-            int itemId = itemManager.canonicalize(widget.getItemId());
-            if (itemId <= 0 || !clogData.isClogItem(itemId) || groupState.isUnlocked(itemId)) {
-                return;
             }
             int price = gritService.getPrice(itemId);
             String name = clogData.getItemName(itemId);
+            log.debug("Adding unlock menu entry for {} ({})", name, itemId);
             client.getMenu().createMenuEntry(-1)
                     .setOption("Unlock (" + price + " Grit)")
                     .setTarget(ColorUtil.wrapWithColorTag(name, new Color(0xff9040)))
@@ -80,6 +77,42 @@ public class ClogMenuService {
                     .onClick(e -> confirmPurchase(itemId, name, price));
             return;
         }
+    }
+
+    /**
+     * Fallback that survives other menu-rewriting plugins: clicking the
+     * default "Check" op on a locked clog item opens the purchase dialog.
+     */
+    @Subscribe
+    public void onMenuOptionClicked(net.runelite.api.events.MenuOptionClicked event) {
+        if (!sessionState.isActive() || !clogData.isLoaded()
+                || client.getVarbitValue(VarbitID.COLLECTION_POH_HOST_BOOK_OPEN) == 1) {
+            return;
+        }
+        if (!"Check".equals(event.getMenuOption())) {
+            return;
+        }
+        int itemId = lockedClogItemFor(event.getMenuEntry().getWidget());
+        if (itemId <= 0) {
+            return;
+        }
+        event.consume();
+        String name = clogData.getItemName(itemId);
+        int price = gritService.getPrice(itemId);
+        log.info("Check-click purchase prompt for {} ({})", name, itemId);
+        confirmPurchase(itemId, name, price);
+    }
+
+    /** The locked clog item a menu widget points at, or -1. */
+    private int lockedClogItemFor(Widget widget) {
+        if (widget == null || widget.getId() != InterfaceID.Collection.ITEMS_CONTENTS) {
+            return -1;
+        }
+        int itemId = itemManager.canonicalize(widget.getItemId());
+        if (itemId <= 0 || !clogData.isClogItem(itemId) || groupState.isUnlocked(itemId)) {
+            return -1;
+        }
+        return itemId;
     }
 
     private void confirmPurchase(int itemId, String name, int price) {

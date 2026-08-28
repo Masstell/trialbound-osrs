@@ -8,6 +8,7 @@ import javax.inject.Singleton;
 
 import mvdicarlo.crabmanmode.store.TbEventRecord;
 import mvdicarlo.crabmanmode.store.UnlockSource;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.game.ChatIconManager;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.util.AsyncBufferedImage;
@@ -25,33 +26,39 @@ public class UnlockAnnouncer {
 
     private final ItemManager itemManager;
     private final ChatIconManager chatIconManager;
+    private final ClientThread clientThread;
     private final TrialboundChat chat;
 
     private final Map<Integer, Integer> iconIdByItem = new ConcurrentHashMap<>();
 
     @Inject
-    public UnlockAnnouncer(ItemManager itemManager, ChatIconManager chatIconManager, TrialboundChat chat) {
+    public UnlockAnnouncer(ItemManager itemManager, ChatIconManager chatIconManager, ClientThread clientThread,
+            TrialboundChat chat) {
         this.itemManager = itemManager;
         this.chatIconManager = chatIconManager;
+        this.clientThread = clientThread;
         this.chat = chat;
     }
 
     public void announce(TbEventRecord unlock) {
-        int itemId = unlock.getItemId();
-        AsyncBufferedImage image = itemManager.getImage(itemId);
-        image.onLoaded(() -> {
-            int iconId = iconIdByItem.computeIfAbsent(itemId, k -> chatIconManager
-                    .registerChatIcon(ImageUtil.resizeImage(image, ICON_WIDTH, ICON_HEIGHT)));
-            chat.send(chatIconManager.chatIconIndex(iconId), message(unlock));
-        });
+        sendWithItemIcon(unlock.getItemId(), message(unlock));
     }
 
     public void announceRelock(int itemId, String itemName) {
+        sendWithItemIcon(itemId, "Re-locked: " + itemName + ".");
+    }
+
+    /**
+     * The icon index is only assigned by ChatIconManager's refresh, which it
+     * queues on the client thread - so the send is queued behind it, or the
+     * first message per item would always come out iconless.
+     */
+    private void sendWithItemIcon(int itemId, String message) {
         AsyncBufferedImage image = itemManager.getImage(itemId);
         image.onLoaded(() -> {
             int iconId = iconIdByItem.computeIfAbsent(itemId, k -> chatIconManager
                     .registerChatIcon(ImageUtil.resizeImage(image, ICON_WIDTH, ICON_HEIGHT)));
-            chat.send(chatIconManager.chatIconIndex(iconId), "Re-locked: " + itemName + ".");
+            clientThread.invokeLater(() -> chat.send(chatIconManager.chatIconIndex(iconId), message));
         });
     }
 
