@@ -99,8 +99,10 @@ public class ClogHighlightOverlay extends Overlay {
             } else {
                 graphics.setColor(LOCKED_WASH);
                 graphics.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
-                graphics.setColor(LOCKED_MARK);
-                graphics.fillRect(bounds.x + bounds.width - 7, bounds.y + 2, 5, 5);
+                // Outline the item sprite itself in red (quantity 1 so stack
+                // digits are not outlined too).
+                graphics.drawImage(itemManager.getItemOutline(itemId, 1, LOCKED_MARK),
+                        bounds.x, bounds.y, null);
             }
 
             if (bounds.contains(mouse.getX(), mouse.getY())) {

@@ -28,7 +28,7 @@ dependencies {
 }
 
 group = 'com.masstell.trialbound'
-version = '0.3.2'
+version = '0.3.3'
 
 application {
     mainClass = 'mvdicarlo.crabmanmode.CrabmanModePluginTest'

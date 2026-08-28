@@ -80,8 +80,10 @@ public class GeEnforcementService {
             // isLocked also catches ornament-kit variants of locked clog items.
             if (locked.isLocked(children[i + 2].getItemId())) {
                 children[i].setHidden(true);
-                children[i + 1].setOpacity(70);
-                children[i + 2].setOpacity(70);
+                // 0 = opaque, 255 = invisible; fade hard so locked items are
+                // unmistakable at a glance but still identifiable.
+                children[i + 1].setOpacity(180);
+                children[i + 2].setOpacity(180);
             }
         }
     }

@@ -187,6 +187,8 @@ public class ObtainedSyncService {
     }
 
     private void commit() {
+        boolean changed = !obtained.equals(staging);
+        boolean firstSync = state != SyncState.SYNCED;
         obtained.clear();
         obtained.addAll(staging);
         staging.clear();
@@ -195,7 +197,10 @@ public class ObtainedSyncService {
         state = SyncState.SYNCED;
         persist();
         eventBus.post(new ObtainedSetChanged());
-        chat.send("Trialbound synced your collection log: " + obtained.size() + " obtained items.");
+        // Every clog open re-syncs; only speak when it mattered.
+        if (changed || firstSync) {
+            chat.send("Trialbound synced your collection log: " + obtained.size() + " obtained items.");
+        }
         log.info("Committed collection log sync: {} items, expected count {}", obtained.size(), expectedCount);
     }
 

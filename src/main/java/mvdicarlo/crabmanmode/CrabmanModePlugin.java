@@ -837,7 +837,9 @@ public class CrabmanModePlugin extends Plugin {
         }
 
         unlockImage = ImageUtil.loadImageResource(getClass(), "/item-unlocked.png");
-        BufferedImage image = ImageUtil.loadImageResource(getClass(), "/bronzeman_icon.png");
+        // Same logo as the sidebar, shrunk to mod-icon size for the chat badge.
+        BufferedImage image = ImageUtil.resizeImage(
+                ImageUtil.loadImageResource(getClass(), "/trialbound_icon.png"), 13, 13);
         IndexedSprite indexedSprite = ImageUtil.getImageIndexedSprite(image, client);
 
         bronzemanIconOffset = modIcons.length;
