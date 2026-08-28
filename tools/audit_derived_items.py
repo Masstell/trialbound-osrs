@@ -57,6 +57,11 @@ MATERIAL_ALIASES = {
     "Black mask": "Black mask (10)",
 }
 
+# Cosmetic attachments never gate a product: the kitted variant's lock follows
+# the functional base item only (kitted ancestral is locked iff ancestral is).
+COSMETIC_MATERIAL_PATTERNS = ("ornament kit", "colour kit", "upgrade kit", "whip mix", "crafting kit")
+COSMETIC_MATERIALS = {"Cursed phalanx", "Ornate maul handle", "Twisted horns"}
+
 # Chains the wiki Recipe bucket does not model (enchanting), seeded into the
 # fixpoint so downstream recipes (slayer helm recolours etc.) resolve too.
 MANUAL_EXTRAS = {
@@ -169,9 +174,13 @@ def main():
 
     alias_norm = {normalize(k): v for k, v in MATERIAL_ALIASES.items()}
 
+    cosmetic_norm = {normalize(m) for m in COSMETIC_MATERIALS}
+
     def clog_mat_name(name):
         """Display name of the clog item this material represents, or None."""
         n = normalize(name)
+        if n in cosmetic_norm or any(p in n for p in COSMETIC_MATERIAL_PATTERNS):
+            return None
         if n in alias_norm:
             aliased = alias_norm[n]
             return aliased if normalize(aliased) in clog_names else None
