@@ -257,6 +257,9 @@ public class DropAttributionService {
     private void processLoot(String sourceName, Collection<Integer> itemIds) {
         Optional<ClogPage> page = clogData.resolveSourceName(sourceName);
         int tick = client.getTickCount();
+        // One kill credit covers ALL of a page's items in this batch (double
+        // drops from a single kill both attribute and both pay grit).
+        Map<String, ClogPage> batchAttributed = new HashMap<>();
         for (int itemId : itemIds) {
             if (!clogData.isClogItem(itemId)) {
                 continue;
@@ -271,7 +274,7 @@ public class DropAttributionService {
                     // Possession gains attribute to a recent page-linked kill,
                     // but only when the item belongs to that page (so smithing
                     // Shayzien armour near the ring cannot print grit).
-                    pageName = recentKillPageContaining(itemId, tick);
+                    pageName = batchKillAttribution(itemId, tick, batchAttributed);
                 } else {
                     // A real loot event containing an item unique to ONE page
                     // is self-attributing - no alias needed.
@@ -286,6 +289,23 @@ public class DropAttributionService {
         if (!page.isPresent()) {
             log.debug("Loot source '{}' does not resolve to a collection log page", sourceName);
         }
+    }
+
+    /**
+     * Batch-aware kill attribution: a page already credited in this batch
+     * covers all its items without spending another credit.
+     */
+    private String batchKillAttribution(int itemId, int tick, Map<String, ClogPage> batchAttributed) {
+        for (Map.Entry<String, ClogPage> entry : batchAttributed.entrySet()) {
+            if (entry.getValue().getItemIds().contains(itemId)) {
+                return entry.getKey();
+            }
+        }
+        String pageName = recentKillPageContaining(itemId, tick);
+        if (pageName != null) {
+            clogData.getPage(pageName).ifPresent(p -> batchAttributed.put(pageName, p));
+        }
+        return pageName;
     }
 
     /**
