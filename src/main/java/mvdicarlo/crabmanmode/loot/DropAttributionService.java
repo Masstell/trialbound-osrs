@@ -63,6 +63,8 @@ public class DropAttributionService {
 
     private final Map<String, Integer> recentServerLootTicks = new HashMap<>();
     private final Map<Integer, Integer> recentlyResolved = new HashMap<>();
+    /** Page name -> tick of a recent kill of a page-linked NPC. */
+    private final Map<String, Integer> recentKillPages = new HashMap<>();
     private final Map<String, ChestFingerprint> chestFingerprints = new HashMap<>();
     private final List<PendingNotification> pendingNotifications = new ArrayList<>();
 
@@ -184,11 +186,27 @@ public class DropAttributionService {
         pendingNotifications.add(new PendingNotification(itemName, tick));
     }
 
+    /**
+     * Rewards placed directly in the inventory (Shayzien ring armour) have no
+     * loot event; remembering page-linked kills lets the possession path
+     * attribute them (and pay trial grit) via recency.
+     */
+    @Subscribe
+    public void onActorDeath(net.runelite.api.events.ActorDeath event) {
+        if (!(event.getActor() instanceof net.runelite.api.NPC) || !ready()) {
+            return;
+        }
+        String name = event.getActor().getName();
+        clogData.resolveSourceName(name).ifPresent(page ->
+                recentKillPages.put(page.getName(), client.getTickCount()));
+    }
+
     @Subscribe
     public void onGameTick(GameTick event) {
         int tick = client.getTickCount();
         recentlyResolved.values().removeIf(t -> tick - t > RESOLVED_RETENTION_TICKS);
         recentServerLootTicks.values().removeIf(t -> tick - t > RESOLVED_RETENTION_TICKS);
+        recentKillPages.values().removeIf(t -> tick - t > RESOLVED_RETENTION_TICKS);
 
         Iterator<PendingNotification> it = pendingNotifications.iterator();
         while (it.hasNext()) {
@@ -219,9 +237,17 @@ public class DropAttributionService {
         emit(itemId, null, null, tick);
     }
 
+    /** Source name for inventory-gain acquisitions (shops, direct rewards). */
+    public static final String ACQUISITION_SOURCE = "Acquisition";
+
     private void processLoot(String sourceName, Collection<Integer> itemIds) {
         Optional<ClogPage> page = clogData.resolveSourceName(sourceName);
         int tick = client.getTickCount();
+        if (!page.isPresent() && ACQUISITION_SOURCE.equals(sourceName)) {
+            // Direct-to-inventory rewards (Shayzien ring armour) attribute to
+            // a just-killed page-linked NPC so trial grit can pay out.
+            page = recentKillPage(tick);
+        }
         for (int itemId : itemIds) {
             if (!clogData.isClogItem(itemId)) {
                 continue;
@@ -235,6 +261,19 @@ public class DropAttributionService {
         if (!page.isPresent()) {
             log.debug("Loot source '{}' does not resolve to a collection log page", sourceName);
         }
+    }
+
+    /** The most recent page-linked kill within the correlation window. */
+    private Optional<ClogPage> recentKillPage(int tick) {
+        String bestPage = null;
+        int bestTick = Integer.MIN_VALUE;
+        for (Map.Entry<String, Integer> entry : recentKillPages.entrySet()) {
+            if (tick - entry.getValue() <= CORRELATION_WINDOW_TICKS && entry.getValue() > bestTick) {
+                bestPage = entry.getKey();
+                bestTick = entry.getValue();
+            }
+        }
+        return bestPage == null ? Optional.empty() : clogData.getPage(bestPage);
     }
 
     private void emit(int itemId, String pageName, String sourceName, int tick) {

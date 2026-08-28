@@ -147,7 +147,7 @@ public class ShopAcquisitionService {
             }
             if (!gained.isEmpty()) {
                 log.info("Inventory acquisition of clog items {} (no excluded context)", gained);
-                attribution.onExternalAcquisition("Acquisition", gained);
+                attribution.onExternalAcquisition(DropAttributionService.ACQUISITION_SOURCE, gained);
             }
         }
 

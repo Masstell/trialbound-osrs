@@ -104,13 +104,16 @@ public class TrialService {
 
         String override = config.trialDailyOverride().trim();
         if (!override.isEmpty()) {
+            // Accept a page name or any alias ("Shayzien soldier (tier 1)").
+            String page = registry.resolveAlias(override).orElse(override);
             List<TrialSlot> adjusted = new java.util.ArrayList<>(slots.size());
             for (TrialSlot slot : slots) {
                 adjusted.add(slot.getType() == TrialType.DAILY
-                        ? new TrialSlot(TrialType.DAILY, override, slot.getPeriodKey(), slot.getPeriodEndUtc())
+                        ? new TrialSlot(TrialType.DAILY, page, slot.getPeriodKey(), slot.getPeriodEndUtc())
                         : slot);
             }
             slots = Collections.unmodifiableList(adjusted);
+            log.info("Daily trial override active: '{}' -> page '{}'", override, page);
         }
 
         if (slots.equals(activeTrials)) {

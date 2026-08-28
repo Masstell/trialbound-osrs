@@ -118,6 +118,11 @@ public class CrabmanModePanel extends PluginPanel {
 
             sb.append("<br>Unlocks: ").append(groupState.getUnlockedItems().size())
                     .append(" &middot; Pooled Grit: ").append(groupState.getPooledGrit());
+
+            if (!config.trialDailyOverride().trim().isEmpty()) {
+                sb.append("<br><font color='#ffb84d'>Daily override: ")
+                        .append(config.trialDailyOverride().trim()).append("</font>");
+            }
         }
 
         sb.append("</font></html>");
