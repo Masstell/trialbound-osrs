@@ -47,6 +47,7 @@ import com.google.inject.Provides;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import mvdicarlo.crabmanmode.clog.ClogDataService;
+import mvdicarlo.crabmanmode.clog.ClogUnlockDetector;
 import mvdicarlo.crabmanmode.clog.ObtainedSyncService;
 import mvdicarlo.crabmanmode.database.DatabaseRepository;
 import net.runelite.api.ChatMessageType;
@@ -126,17 +127,6 @@ public class CrabmanModePlugin extends Plugin {
 
     private static final int GE_SEARCH_BUILD_SCRIPT = 751;
 
-    static final Set<Integer> OWNED_INVENTORY_IDS = ImmutableSet.of(
-            0, // Reward from fishing trawler.
-            93, // Standard player inventory.
-            94, // Equipment inventory.
-            95, // Bank inventory.
-            141, // Barrows reward chest inventory.
-            390, // Kingdom Of Miscellania reward inventory.
-            581, // Chambers of Xeric chest inventory.
-            612, // Theater of Blood reward chest inventory (Raids 2).
-            626); // Seed vault located inside the Farming Guild.
-
     @Inject
     private Client client;
 
@@ -169,6 +159,12 @@ public class CrabmanModePlugin extends Plugin {
 
     @Inject
     private ObtainedSyncService obtainedSyncService;
+
+    @Inject
+    private mvdicarlo.crabmanmode.loot.DropAttributionService dropAttributionService;
+
+    @Inject
+    private ClogUnlockDetector clogUnlockDetector;
 
     @Inject
     private net.runelite.client.eventbus.EventBus eventBus;
@@ -239,6 +235,8 @@ public class CrabmanModePlugin extends Plugin {
         chatCommandManager.registerCommand(TB_CLOG_DEBUG_STRING, this::onClogDebugCommand);
 
         eventBus.register(obtainedSyncService);
+        eventBus.register(dropAttributionService);
+        eventBus.register(clogUnlockDetector);
         clogDataService.ensureLoaded();
 
         clientThread.invoke(() -> {
@@ -266,6 +264,8 @@ public class CrabmanModePlugin extends Plugin {
         chatCommandManager.unregisterCommand(GBM_RECENT_STRING);
         chatCommandManager.unregisterCommand(TB_CLOG_DEBUG_STRING);
         eventBus.unregister(obtainedSyncService);
+        eventBus.unregister(dropAttributionService);
+        eventBus.unregister(clogUnlockDetector);
         clientToolbar.removeNavigation(navButton);
         clientThread.invoke(() -> {
             // Cleanup is not required after having played on a seasonal world.
@@ -279,7 +279,6 @@ public class CrabmanModePlugin extends Plugin {
     @Subscribe
     public void onGameStateChanged(GameStateChanged e) {
         if (e.getGameState() == GameState.LOGGED_IN) {
-            unlockDefaultItems();
             loadResources();
 
             onSeasonalWorld = isSeasonalWorld(client.getWorld());
@@ -295,14 +294,6 @@ public class CrabmanModePlugin extends Plugin {
     public void onPluginChanged(PluginChanged e) {
         if (e.getPlugin() == this && client.getGameState() == GameState.LOGGED_IN) {
             // setupUnlockHistory();
-        }
-    }
-
-    /** Unlocks all new items that are currently not unlocked **/
-    @Subscribe
-    public void onItemContainerChanged(ItemContainerChanged e) {
-        if (OWNED_INVENTORY_IDS.contains(e.getContainerId())) {
-            unlockItemContainerItems(e.getItemContainer());
         }
     }
 
@@ -445,28 +436,6 @@ public class CrabmanModePlugin extends Plugin {
         panel.displayItems(filteredItems); // Redraw the panel
     }
 
-    /** Unlocks all items in the given item container. **/
-    public void unlockItemContainerItems(ItemContainer itemContainer) {
-        if (onSeasonalWorld) {
-            return;
-        }
-        for (Item i : itemContainer.getItems()) {
-            int itemId = i.getId();
-            int realItemId = itemManager.canonicalize(itemId);
-            ItemComposition itemComposition = itemManager.getItemComposition(itemId);
-            int noteId = itemComposition.getNote();
-            if (itemId != realItemId && noteId != 799)
-                continue; // The 799 signifies that it is a noted item
-            if (i.getId() <= 1)
-                continue;
-            if (i.getQuantity() <= 0)
-                continue;
-
-            // Let the repository handle duplicate checks - just attempt to unlock all items
-            queueItemUnlock(realItemId, false);
-        }
-    }
-
     public void onItemsUnlocked(List<UnlockedItemEntity> unlockedItems) {
         if (!isLoggedIntoCrabman()) {
             return;
@@ -476,54 +445,6 @@ public class CrabmanModePlugin extends Plugin {
             sendChatMessage(unlockedItem.getAcquiredBy() + " has unlocked a new item: " + unlockedItem.getItemName()
                     + ".");
         });
-    }
-
-    /** Queues a new unlock to be properly displayed **/
-    public void queueItemUnlock(int itemId, boolean skipChecks) {
-        // Should only be used for Bonds and Gold
-        if (!skipChecks) {
-            if (!isLoggedIntoCrabman()) {
-                return;
-            }
-            boolean tradeable = itemManager.getItemComposition(itemId).isTradeable();
-            if (!tradeable) {
-                log.info("Item is not tradeable: " + client.getItemDefinition(itemId).getName());
-                return;
-            }
-        }
-
-        if (databaseRepo.hasItem(itemId)) {
-            return; // Item is already unlocked
-        }
-
-        UnlockedItemEntity unlockedItem = databaseRepo.createNewItem(itemId,
-                client.getItemDefinition(itemId).getName());
-
-        log.info("Unlocking item: " + unlockedItem.getItemName());
-
-        databaseRepo.insertItem(unlockedItem)
-                .whenComplete((result, throwable) -> {
-                    if (throwable != null) {
-                        log.error("Failed to unlock item: " + unlockedItem.getItemName(), throwable);
-                        sendChatMessage(
-                                "Failed to unlock item: " + unlockedItem.getItemName() + ". Check your SAS Token.");
-                    } else {
-                        log.debug("Successfully unlocked item: " + unlockedItem.getItemName());
-                    }
-
-                    // Update panel
-                    if (panel != null) {
-                        clientThread.invokeLater(() -> {
-                            panel.displayItems(new ArrayList<ItemObject>());
-                        });
-                    }
-                });
-    }
-
-    /** Unlocks default items like a bond to a newly made profile **/
-    private void unlockDefaultItems() {
-        queueItemUnlock(ItemID.COINS, true);
-        queueItemUnlock(ItemID.OSRS_BOND, true);
     }
 
     public void sendChatMessage(String chatMessage) {
