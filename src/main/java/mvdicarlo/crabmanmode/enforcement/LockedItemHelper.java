@@ -16,14 +16,16 @@ public class LockedItemHelper {
     private final ClogDataService clogData;
     private final GroupStateService groupState;
     private final ItemManager itemManager;
+    private final DerivedItemRegistry derived;
 
     @Inject
     public LockedItemHelper(SessionState sessionState, ClogDataService clogData, GroupStateService groupState,
-            ItemManager itemManager) {
+            ItemManager itemManager, DerivedItemRegistry derived) {
         this.sessionState = sessionState;
         this.clogData = clogData;
         this.groupState = groupState;
         this.itemManager = itemManager;
+        this.derived = derived;
     }
 
     /** True when enforcement applies at all (active character, data loaded). */
@@ -48,9 +50,21 @@ public class LockedItemHelper {
         return canonical;
     }
 
-    /** True when the item (or its variation base) is a clog item the group has not unlocked. */
+    /**
+     * True when the item is locked: it (or its variation base) is a clog item
+     * the group has not unlocked, or it is crafted from clog items of which
+     * any is still locked (blowpipe from Tanzanite fang etc.).
+     */
     public boolean isLocked(int itemId) {
         int id = lockCheckId(itemId);
-        return clogData.isClogItem(id) && !groupState.isUnlocked(id);
+        if (clogData.isClogItem(id)) {
+            return !groupState.isUnlocked(id);
+        }
+        for (int required : derived.getRequirements(id)) {
+            if (!groupState.isUnlocked(required)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

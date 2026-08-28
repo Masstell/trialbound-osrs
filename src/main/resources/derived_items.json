@@ -1,0 +1,73 @@
+{
+  "version": 1,
+  "_comment": "Items that are not collection log entries themselves but are made FROM clog items. A product is locked while ANY of its required clog items is locked. 'product' matches item names exactly, plus parenthesised variants ('Toxic blowpipe' also covers 'Toxic blowpipe (empty)'); list charge-state names that differ outright as separate entries. 'requires' are clog item names, resolved against the collection log at startup (mismatches are logged).",
+  "derived": [
+    { "product": "Toxic blowpipe", "requires": ["Tanzanite fang"] },
+    { "product": "Trident of the swamp", "requires": ["Magic fang"] },
+    { "product": "Uncharged toxic trident", "requires": ["Magic fang"] },
+    { "product": "Toxic staff of the dead", "requires": ["Magic fang"] },
+    { "product": "Toxic staff", "requires": ["Magic fang"] },
+    { "product": "Serpentine helm", "requires": ["Serpentine visage"] },
+
+    { "product": "Armadyl godsword", "requires": ["Armadyl hilt"] },
+    { "product": "Bandos godsword", "requires": ["Bandos hilt"] },
+    { "product": "Saradomin godsword", "requires": ["Saradomin hilt"] },
+    { "product": "Zamorak godsword", "requires": ["Zamorak hilt"] },
+
+    { "product": "Blessed spirit shield", "requires": ["Spirit shield", "Holy elixir"] },
+    { "product": "Arcane spirit shield", "requires": ["Arcane sigil"] },
+    { "product": "Spectral spirit shield", "requires": ["Spectral sigil"] },
+    { "product": "Elysian spirit shield", "requires": ["Elysian sigil"] },
+
+    { "product": "Dragonfire shield", "requires": ["Draconic visage"] },
+    { "product": "Dragonfire ward", "requires": ["Skeletal visage"] },
+    { "product": "Ancient wyvern shield", "requires": ["Wyvern visage"] },
+
+    { "product": "Kodai wand", "requires": ["Kodai insignia"] },
+    { "product": "Voidwaker", "requires": ["Voidwaker blade", "Voidwaker hilt", "Voidwaker gem"] },
+    { "product": "Venator bow", "requires": ["Venator shard"] },
+    { "product": "Zaryte crossbow", "requires": ["Nihil horn"] },
+    { "product": "Abyssal bludgeon", "requires": ["Bludgeon axon", "Bludgeon claw", "Bludgeon spine"] },
+
+    { "product": "Blade of saeldor", "requires": ["Enhanced crystal weapon seed"] },
+    { "product": "Bow of faerdhinen", "requires": ["Enhanced crystal weapon seed"] },
+
+    { "product": "Primordial boots", "requires": ["Primordial crystal"] },
+    { "product": "Pegasian boots", "requires": ["Pegasian crystal"] },
+    { "product": "Eternal boots", "requires": ["Eternal crystal"] },
+
+    { "product": "Neitiznot faceguard", "requires": ["Basilisk jaw"] },
+    { "product": "Light ballista", "requires": ["Ballista limbs"] },
+    { "product": "Heavy ballista", "requires": ["Heavy frame"] },
+
+    { "product": "Malediction ward", "requires": ["Malediction shard 1", "Malediction shard 2", "Malediction shard 3"] },
+    { "product": "Odium ward", "requires": ["Odium shard 1", "Odium shard 2", "Odium shard 3"] },
+
+    { "product": "Harmonised nightmare staff", "requires": ["Harmonised orb"] },
+    { "product": "Volatile nightmare staff", "requires": ["Volatile orb"] },
+    { "product": "Eldritch nightmare staff", "requires": ["Eldritch orb"] },
+
+    { "product": "Dragon hunter lance", "requires": ["Hydra's claw"] },
+    { "product": "Ferocious gloves", "requires": ["Hydra leather"] },
+
+    { "product": "Ultor ring", "requires": ["Ultor vestige"] },
+    { "product": "Bellator ring", "requires": ["Bellator vestige"] },
+    { "product": "Magus ring", "requires": ["Magus vestige"] },
+    { "product": "Venator ring", "requires": ["Venator vestige"] },
+    { "product": "Soulreaper axe", "requires": ["Executioner's axe head", "Siren's staff", "Eye of the duke", "Leviathan's lure"] },
+
+    { "product": "Torva full helm", "requires": ["Torva full helm (damaged)"] },
+    { "product": "Torva platebody", "requires": ["Torva platebody (damaged)"] },
+    { "product": "Torva platelegs", "requires": ["Torva platelegs (damaged)"] },
+
+    { "product": "Emberlight", "requires": ["Tormented synapse"] },
+    { "product": "Scorching bow", "requires": ["Tormented synapse"] },
+    { "product": "Purging staff", "requires": ["Tormented synapse"] },
+
+    { "product": "Accursed sceptre", "requires": ["Skull of vet'ion"] },
+    { "product": "Webweaver bow", "requires": ["Fangs of venenatis"] },
+    { "product": "Ursine chainmace", "requires": ["Claws of callisto"] },
+
+    { "product": "Bryophyta's staff", "requires": ["Bryophyta's essence"] }
+  ]
+}

@@ -187,6 +187,9 @@ public class CrabmanModePlugin extends Plugin {
     private mvdicarlo.crabmanmode.enforcement.LockedItemOverlay lockedItemOverlay;
 
     @Inject
+    private mvdicarlo.crabmanmode.enforcement.DerivedItemRegistry derivedItemRegistry;
+
+    @Inject
     private mvdicarlo.crabmanmode.ui.ClogHighlightOverlay clogHighlightOverlay;
 
     @Inject
@@ -323,6 +326,7 @@ public class CrabmanModePlugin extends Plugin {
         eventBus.register(geEnforcementService);
         eventBus.register(equipEnforcementService);
         eventBus.register(tradeWarningService);
+        eventBus.register(derivedItemRegistry);
         eventBus.register(clogMenuService);
         overlayManager.add(tradeWarningOverlay);
         overlayManager.add(lockedItemOverlay);
@@ -368,6 +372,7 @@ public class CrabmanModePlugin extends Plugin {
         eventBus.unregister(geEnforcementService);
         eventBus.unregister(equipEnforcementService);
         eventBus.unregister(tradeWarningService);
+        eventBus.unregister(derivedItemRegistry);
         eventBus.unregister(clogMenuService);
         overlayManager.remove(tradeWarningOverlay);
         overlayManager.remove(lockedItemOverlay);
