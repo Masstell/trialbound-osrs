@@ -1,0 +1,51 @@
+plugins {
+	id 'java'
+	id 'application'
+}
+
+repositories {
+	mavenLocal()
+	maven {
+		url = 'https://repo.runelite.net'
+		content {
+			includeGroupByRegex("net\\.runelite.*")
+		}
+	}
+	mavenCentral()
+}
+
+def runeLiteVersion = 'latest.release'
+
+dependencies {
+	compileOnly group: 'net.runelite', name:'client', version: runeLiteVersion
+
+	compileOnly 'org.projectlombok:lombok:1.18.30'
+	annotationProcessor 'org.projectlombok:lombok:1.18.30'
+
+	testImplementation 'junit:junit:4.12'
+	testImplementation group: 'net.runelite', name:'client', version: runeLiteVersion
+	testImplementation group: 'net.runelite', name:'jshell', version: runeLiteVersion
+}
+
+group = 'mvdicarlo'
+version = '1.0.1'
+
+application {
+    mainClass = 'mvdicarlo.crabmanmode.CrabmanModePluginTest'
+}
+
+// Task to run the plugin for testing
+task runPlugin(type: JavaExec) {
+    description = 'Run the plugin with RuneLite for testing'
+    group = 'application'
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'mvdicarlo.crabmanmode.CrabmanModePluginTest'
+    
+    // Add JVM arguments if needed
+    jvmArgs = ['-ea', '-Xmx512m']
+}
+
+tasks.withType(JavaCompile) {
+	options.encoding = 'UTF-8'
+	options.release.set(11)
+}
