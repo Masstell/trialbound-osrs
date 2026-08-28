@@ -34,11 +34,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
-import javax.swing.JOptionPane;
 
 import com.google.inject.Provides;
 
@@ -61,7 +59,6 @@ import net.runelite.api.GameState;
 import net.runelite.api.IconID;
 import net.runelite.api.IndexedSprite;
 import net.runelite.api.Item;
-import net.runelite.api.ItemComposition;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.MessageNode;
 import net.runelite.api.gameval.VarbitID;
@@ -84,7 +81,6 @@ import net.runelite.client.chat.QueuedMessage;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
-import net.runelite.client.events.PluginChanged;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.WorldService;
 import net.runelite.client.plugins.Plugin;
@@ -92,7 +88,6 @@ import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.overlay.OverlayManager;
-import net.runelite.client.util.AsyncBufferedImage;
 import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.Text;
 import net.runelite.http.api.worlds.World;
@@ -103,26 +98,10 @@ import net.runelite.http.api.worlds.WorldResult;
         "overlay", "collection log", "clog", "grit", "trials", "bronzeman", "group" })
 public class CrabmanModePlugin extends Plugin {
     public static final String CONFIG_GROUP = "crabmanmode";
-    private static final String GBM_UNLOCKS_STRING = "!gbmunlocks";
-    private static final String GBM_COUNT_STRING = "!gbmcount";
-    private static final String GBM_RECENT_STRING = "!gbmrecent";
+    private static final String TB_UNLOCKS_STRING = "!tbunlocks";
+    private static final String TB_RECENT_STRING = "!tbrecent";
     private static final String TB_CLOG_DEBUG_STRING = "!tbclog";
     private static final String TB_GRIT_STRING = "!grit";
-
-    final int COLLECTION_LOG_GROUP_ID = 621;
-    final int COMBAT_ACHIEVEMENT_BUTTON = 40697877;
-    final int COLLECTION_VIEW_SCROLLBAR = 40697894;
-
-    final int COLLECTION_VIEW_CATEGORIES_CONTAINER = 40697885;
-    final int COLLECTION_VIEW_CATEGORIES_RECTANGLE = 40697890;
-    final int COLLECTION_VIEW_CATEGORIES_TEXT = 40697891;
-    final int COLLECTION_VIEW_CATEGORIES_SCROLLBAR = 40697886;
-
-    final int MENU_INSPECT = 2;
-    final int MENU_DELETE = 3;
-
-    final int SELECTED_OPACITY = 200;
-    final int UNSELECTED_OPACITY = 235;
 
     @Inject
     private Client client;
@@ -322,9 +301,8 @@ public class CrabmanModePlugin extends Plugin {
         initializeGroupState();
 
         overlayManager.add(CrabmanModeOverlay);
-        chatCommandManager.registerCommand(GBM_UNLOCKS_STRING, this::OnUnlocksCountCommand);
-        chatCommandManager.registerCommand(GBM_COUNT_STRING, this::OnUnlocksCountCommand);
-        chatCommandManager.registerCommand(GBM_RECENT_STRING, this::OnRecentUnlocksCommand);
+        chatCommandManager.registerCommand(TB_UNLOCKS_STRING, this::OnUnlocksCountCommand);
+        chatCommandManager.registerCommand(TB_RECENT_STRING, this::OnRecentUnlocksCommand);
         chatCommandManager.registerCommand(TB_CLOG_DEBUG_STRING, this::onClogDebugCommand);
         chatCommandManager.registerCommand(TB_GRIT_STRING, this::onGritCommand);
 
@@ -367,9 +345,8 @@ public class CrabmanModePlugin extends Plugin {
         groupState.removeListener(groupStateListener);
         groupState.close();
         overlayManager.remove(CrabmanModeOverlay);
-        chatCommandManager.unregisterCommand(GBM_UNLOCKS_STRING);
-        chatCommandManager.unregisterCommand(GBM_COUNT_STRING);
-        chatCommandManager.unregisterCommand(GBM_RECENT_STRING);
+        chatCommandManager.unregisterCommand(TB_UNLOCKS_STRING);
+        chatCommandManager.unregisterCommand(TB_RECENT_STRING);
         chatCommandManager.unregisterCommand(TB_CLOG_DEBUG_STRING);
         chatCommandManager.unregisterCommand(TB_GRIT_STRING);
         eventBus.unregister(obtainedSyncService);
@@ -406,13 +383,6 @@ public class CrabmanModePlugin extends Plugin {
             onSeasonalWorld = isSeasonalWorld(client.getWorld());
             sessionState.setSeasonalWorld(onSeasonalWorld);
             clogDataService.ensureLoaded();
-        }
-    }
-
-    @Subscribe
-    public void onPluginChanged(PluginChanged e) {
-        if (e.getPlugin() == this && client.getGameState() == GameState.LOGGED_IN) {
-            // setupUnlockHistory();
         }
     }
 
