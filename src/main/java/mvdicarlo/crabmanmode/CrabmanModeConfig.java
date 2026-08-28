@@ -92,6 +92,11 @@ public interface CrabmanModeConfig extends Config {
         return true;
     }
 
+    @ConfigItem(keyName = "trialDailyOverride", name = "Daily trial override", position = 9, description = "TESTING: force the daily trial to this collection log page (e.g. 'Shayzien Armour'). Every group member must set the same value. Leave empty for normal rotation.", section = generalSection)
+    default String trialDailyOverride() {
+        return "";
+    }
+
     // Legacy Azure storage key; removed along with the database layer.
     @ConfigItem(hidden = true, secret = true, keyName = "databaseString", name = "Azure Storage Account SAS URL", description = "Legacy group storage SAS URL.")
     default String databaseString() {

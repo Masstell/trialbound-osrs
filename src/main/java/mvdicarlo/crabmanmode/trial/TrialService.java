@@ -41,16 +41,25 @@ public class TrialService {
     private final EventBus eventBus;
     private final SessionState sessionState;
     private final TrialboundChat chat;
+    private final mvdicarlo.crabmanmode.CrabmanModeConfig config;
 
     private volatile List<TrialSlot> activeTrials = Collections.emptyList();
     private long computedEpochDay = Long.MIN_VALUE;
 
     @Inject
-    public TrialService(BossTierRegistry registry, EventBus eventBus, SessionState sessionState, TrialboundChat chat) {
+    public TrialService(BossTierRegistry registry, EventBus eventBus, SessionState sessionState, TrialboundChat chat,
+            mvdicarlo.crabmanmode.CrabmanModeConfig config) {
         this.registry = registry;
         this.eventBus = eventBus;
         this.sessionState = sessionState;
         this.chat = chat;
+        this.config = config;
+    }
+
+    /** Re-evaluates trials now (config override changed). */
+    public void refresh() {
+        computedEpochDay = Long.MIN_VALUE;
+        recompute(false);
     }
 
     public List<TrialSlot> getActiveTrials() {
@@ -92,6 +101,18 @@ public class TrialService {
         LocalDate today = LocalDate.now(ZoneOffset.UTC);
         computedEpochDay = today.toEpochDay();
         List<TrialSlot> slots = computeTrials(today, registry);
+
+        String override = config.trialDailyOverride().trim();
+        if (!override.isEmpty()) {
+            List<TrialSlot> adjusted = new java.util.ArrayList<>(slots.size());
+            for (TrialSlot slot : slots) {
+                adjusted.add(slot.getType() == TrialType.DAILY
+                        ? new TrialSlot(TrialType.DAILY, override, slot.getPeriodKey(), slot.getPeriodEndUtc())
+                        : slot);
+            }
+            slots = Collections.unmodifiableList(adjusted);
+        }
+
         if (slots.equals(activeTrials)) {
             return;
         }

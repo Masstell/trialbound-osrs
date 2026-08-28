@@ -471,6 +471,8 @@ public class CrabmanModePlugin extends Plugin {
             } else if (event.getKey().equals("partyPassphrase")) {
                 initializeGroupState();
                 partySyncService.maybeJoinParty();
+            } else if (event.getKey().equals("trialDailyOverride")) {
+                trialService.refresh();
             }
         }
     }

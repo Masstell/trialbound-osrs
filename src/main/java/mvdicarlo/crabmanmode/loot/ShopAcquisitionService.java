@@ -54,6 +54,7 @@ public class ShopAcquisitionService {
     private final SessionState sessionState;
     private final ClogDataService clogData;
     private final DropAttributionService attribution;
+    private final net.runelite.client.callback.ClientThread clientThread;
 
     private final Map<Integer, Integer> inventorySnapshot = new HashMap<>();
     private final Set<Integer> openExcludedInterfaces = new HashSet<>();
@@ -62,19 +63,45 @@ public class ShopAcquisitionService {
 
     @Inject
     public ShopAcquisitionService(Client client, ItemManager itemManager, SessionState sessionState,
-            ClogDataService clogData, DropAttributionService attribution) {
+            ClogDataService clogData, DropAttributionService attribution,
+            net.runelite.client.callback.ClientThread clientThread) {
         this.client = client;
         this.itemManager = itemManager;
         this.sessionState = sessionState;
         this.clogData = clogData;
         this.attribution = attribution;
+        this.clientThread = clientThread;
     }
 
     @Subscribe
     public void onGameStateChanged(GameStateChanged event) {
-        // Fresh world/session: never diff across a gap we did not observe.
-        snapshotValid = false;
-        openExcludedInterfaces.clear();
+        switch (event.getGameState()) {
+            case LOGIN_SCREEN:
+            case HOPPING:
+            case CONNECTION_LOST:
+                // Never diff across a gap we did not observe. NOTE: LOADING
+                // fires on every region crossing and must NOT reset the
+                // baseline, or walking to a shop wipes it.
+                snapshotValid = false;
+                openExcludedInterfaces.clear();
+                break;
+            case LOGGED_IN:
+                clientThread.invokeLater(this::baseline);
+                break;
+            default:
+                break;
+        }
+    }
+
+    /** Proactive baseline so the first inventory change after login is diffable. */
+    private void baseline() {
+        ItemContainer inventory = client.getItemContainer(InventoryID.INV);
+        if (inventory != null) {
+            inventorySnapshot.clear();
+            inventorySnapshot.putAll(countInventory(inventory));
+            snapshotValid = true;
+            log.info("Inventory baseline established: {} item stacks", inventorySnapshot.size());
+        }
     }
 
     @Subscribe
