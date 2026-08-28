@@ -68,6 +68,55 @@
     { "product": "Webweaver bow", "requires": ["Fangs of venenatis"] },
     { "product": "Ursine chainmace", "requires": ["Claws of callisto"] },
 
-    { "product": "Bryophyta's staff", "requires": ["Bryophyta's essence"] }
+    { "product": "Bryophyta's staff", "requires": ["Bryophyta's essence"] },
+
+    { "product": "Abyssal tentacle", "requires": ["Kraken tentacle", "Abyssal whip"] },
+    { "product": "Slayer helmet", "requires": ["Black mask (10)"] },
+    { "product": "Black slayer helmet", "requires": ["Black mask (10)", "Kbd heads"] },
+    { "product": "Green slayer helmet", "requires": ["Black mask (10)", "Kq head"] },
+    { "product": "Red slayer helmet", "requires": ["Black mask (10)", "Abyssal head"] },
+    { "product": "Hydra slayer helmet", "requires": ["Black mask (10)", "Alchemical hydra heads"] },
+    { "product": "Turquoise slayer helmet", "requires": ["Black mask (10)", "Vorkath's head"] },
+    { "product": "Purple slayer helmet", "requires": ["Black mask (10)", "Dark claw"] },
+    { "product": "Tztok slayer helmet", "requires": ["Black mask (10)"] },
+    { "product": "Tzkal slayer helmet", "requires": ["Black mask (10)"] },
+    { "product": "Vampyric slayer helmet", "requires": ["Black mask (10)"] },
+
+    { "product": "Ancient sceptre", "requires": ["Ancient icon"] },
+    { "product": "Blood ancient sceptre", "requires": ["Ancient icon", "Blood quartz"] },
+    { "product": "Ice ancient sceptre", "requires": ["Ancient icon", "Ice quartz"] },
+    { "product": "Smoke ancient sceptre", "requires": ["Ancient icon", "Smoke quartz"] },
+    { "product": "Shadow ancient sceptre", "requires": ["Ancient icon", "Shadow quartz"] },
+
+    { "product": "Celestial signet", "requires": ["Celestial ring"] },
+    { "product": "Guardian boots", "requires": ["Black tourmaline core"] },
+    { "product": "Devout boots", "requires": ["Drake's tooth"] },
+    { "product": "Boots of brimstone", "requires": ["Drake's claw"] },
+    { "product": "Bonecrusher necklace", "requires": ["Hydra tail"] },
+    { "product": "Noxious halberd", "requires": ["Noxious point", "Noxious blade", "Noxious pommel"] },
+    { "product": "Amulet of rancour", "requires": ["Araxyte fang"] },
+
+    { "product": "Bone mace", "requires": ["Scurrius' spine"] },
+    { "product": "Bone shortbow", "requires": ["Scurrius' spine"] },
+    { "product": "Bone staff", "requires": ["Scurrius' spine"] },
+
+    { "product": "Saradomin's blessed sword", "requires": ["Saradomin's tear"] },
+
+    { "product": "Infernal axe", "requires": ["Smouldering stone"] },
+    { "product": "Infernal pickaxe", "requires": ["Smouldering stone"] },
+    { "product": "Infernal harpoon", "requires": ["Smouldering stone"] },
+
+    { "product": "Crystal axe", "requires": ["Crystal tool seed"] },
+    { "product": "Crystal pickaxe", "requires": ["Crystal tool seed"] },
+    { "product": "Crystal harpoon", "requires": ["Crystal tool seed"] },
+    { "product": "Crystal helm", "requires": ["Crystal armour seed"] },
+    { "product": "Crystal body", "requires": ["Crystal armour seed"] },
+    { "product": "Crystal legs", "requires": ["Crystal armour seed"] },
+
+    { "product": "Ava's assembler", "requires": ["Vorkath's head"] },
+    { "product": "Masori assembler", "requires": ["Vorkath's head"] },
+
+    { "product": "Blessed dizana's quiver", "requires": ["Dizana's quiver (uncharged)"] },
+    { "product": "Dizana's max cape", "requires": ["Dizana's quiver (uncharged)"] }
   ]
 }
