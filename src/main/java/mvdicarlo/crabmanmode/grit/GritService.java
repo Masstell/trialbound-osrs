@@ -13,11 +13,15 @@ import mvdicarlo.crabmanmode.clog.ClogPage;
 import mvdicarlo.crabmanmode.events.ClogDropResolved;
 import mvdicarlo.crabmanmode.store.GroupStateService;
 import mvdicarlo.crabmanmode.store.PurchaseResult;
+import mvdicarlo.crabmanmode.clog.ClogText;
 import mvdicarlo.crabmanmode.trial.BossTierRegistry;
 import mvdicarlo.crabmanmode.trial.TrialService;
 import mvdicarlo.crabmanmode.trial.TrialSlot;
 import mvdicarlo.crabmanmode.trial.TrialTier;
+import mvdicarlo.crabmanmode.trial.TrialType;
+import net.runelite.api.gameval.ItemID;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.plugins.loottracker.LootReceived;
 
 /**
  * The Grit economy: awards grit for on-trial clog drops (new or duplicate;
@@ -46,6 +50,38 @@ public class GritService {
         this.groupState = groupState;
         this.chat = chat;
         this.toastOverlay = toastOverlay;
+    }
+
+    /**
+     * TEST HOOK - remove after keyless-chest verification. Egg potatoes from
+     * the Grubby Chest pay grit at the daily rate, proving that chest loot
+     * (grubby/Larran's style) flows through real loot events with no kill
+     * credit involved anywhere.
+     */
+    private static final int TEST_CHEST_ITEM_ID = ItemID.POTATO_EGG_TOMATO; // Egg potato
+    private static final String TEST_CHEST_SOURCE = "grubby chest";
+
+    @Subscribe
+    public void onLootReceived(LootReceived event) {
+        if (!sessionState.isActive() || !TEST_CHEST_SOURCE.equals(ClogText.normalize(event.getName()))) {
+            return;
+        }
+        boolean hasTestItem = event.getItems().stream()
+                .anyMatch(stack -> stack.getId() == TEST_CHEST_ITEM_ID);
+        if (!hasTestItem) {
+            return;
+        }
+        TrialSlot daily = trialService.getActiveTrials().stream()
+                .filter(s -> s.getType() == TrialType.DAILY).findFirst().orElse(null);
+        if (daily == null) {
+            return;
+        }
+        int delta = GritEconomy.baseGrit(TrialTier.EASY) * daily.getMultiplierPercent() / 100;
+        groupState.addTrialGrit(TEST_CHEST_ITEM_ID, delta, daily.trialKey(), daily.getMultiplierPercent());
+        String summary = "+" + delta + " Grit - Grubby Chest egg potato (chest test)";
+        toastOverlay.push(summary);
+        chat.send(summary + ". Pooled: " + groupState.getPooledGrit() + ".");
+        log.info("TEST: Grubby Chest egg potato paid {} grit via loot event (no kill credit)", delta);
     }
 
     @Subscribe
