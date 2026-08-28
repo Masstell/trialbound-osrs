@@ -46,6 +46,8 @@ import com.google.inject.Provides;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import mvdicarlo.crabmanmode.clog.ClogDataService;
+import mvdicarlo.crabmanmode.clog.ObtainedSyncService;
 import mvdicarlo.crabmanmode.database.DatabaseRepository;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.ChatPlayer;
@@ -101,7 +103,7 @@ import okhttp3.OkHttpClient;
 @PluginDescriptor(name = "Trialbound", description = "Collection-log-locked game mode: clog items are locked until obtained or purchased with Grit earned from rotating boss trials. Solo or group.", tags = {
         "overlay", "collection log", "clog", "grit", "trials", "bronzeman", "group" })
 public class CrabmanModePlugin extends Plugin {
-    static final String CONFIG_GROUP = "crabmanmode";
+    public static final String CONFIG_GROUP = "crabmanmode";
     private static final String GBM_UNLOCKS_STRING = "!gbmunlocks";
     private static final String GBM_COUNT_STRING = "!gbmcount";
     private static final String GBM_RECENT_STRING = "!gbmrecent";
@@ -163,7 +165,13 @@ public class CrabmanModePlugin extends Plugin {
     private SessionState sessionState;
 
     @Inject
-    private mvdicarlo.crabmanmode.clog.ClogDataService clogDataService;
+    private ClogDataService clogDataService;
+
+    @Inject
+    private ObtainedSyncService obtainedSyncService;
+
+    @Inject
+    private net.runelite.client.eventbus.EventBus eventBus;
 
     @Inject
     private CrabmanModeOverlay CrabmanModeOverlay;
@@ -230,6 +238,7 @@ public class CrabmanModePlugin extends Plugin {
         chatCommandManager.registerCommand(GBM_RECENT_STRING, this::OnRecentUnlocksCommand);
         chatCommandManager.registerCommand(TB_CLOG_DEBUG_STRING, this::onClogDebugCommand);
 
+        eventBus.register(obtainedSyncService);
         clogDataService.ensureLoaded();
 
         clientThread.invoke(() -> {
@@ -256,6 +265,7 @@ public class CrabmanModePlugin extends Plugin {
         chatCommandManager.unregisterCommand(GBM_COUNT_STRING);
         chatCommandManager.unregisterCommand(GBM_RECENT_STRING);
         chatCommandManager.unregisterCommand(TB_CLOG_DEBUG_STRING);
+        eventBus.unregister(obtainedSyncService);
         clientToolbar.removeNavigation(navButton);
         clientThread.invoke(() -> {
             // Cleanup is not required after having played on a seasonal world.
