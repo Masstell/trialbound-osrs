@@ -12,7 +12,6 @@ import javax.swing.Timer;
 
 import mvdicarlo.crabmanmode.clog.ObtainedSyncService;
 import mvdicarlo.crabmanmode.store.GroupStateService;
-import mvdicarlo.crabmanmode.ui.GritTabPanel;
 import mvdicarlo.crabmanmode.ui.TrialsTabPanel;
 import mvdicarlo.crabmanmode.ui.UnlocksTabPanel;
 import net.runelite.client.party.PartyService;
@@ -26,7 +25,6 @@ import net.runelite.client.ui.components.materialtabs.MaterialTabGroup;
 public class CrabmanModePanel extends PluginPanel {
     private final JLabel statusLabel = new JLabel(" ");
     private final TrialsTabPanel trialsTab;
-    private final GritTabPanel gritTab;
     private final UnlocksTabPanel unlocksTab;
     private final SessionState sessionState;
     private final GroupStateService groupState;
@@ -35,11 +33,10 @@ public class CrabmanModePanel extends PluginPanel {
     private final CrabmanModeConfig config;
 
     @Inject
-    public CrabmanModePanel(TrialsTabPanel trialsTab, GritTabPanel gritTab, UnlocksTabPanel unlocksTab,
+    public CrabmanModePanel(TrialsTabPanel trialsTab, UnlocksTabPanel unlocksTab,
             SessionState sessionState, GroupStateService groupState, ObtainedSyncService obtainedSync,
             PartyService partyService, CrabmanModeConfig config) {
         this.trialsTab = trialsTab;
-        this.gritTab = gritTab;
         this.unlocksTab = unlocksTab;
         this.sessionState = sessionState;
         this.groupState = groupState;
@@ -63,10 +60,8 @@ public class CrabmanModePanel extends PluginPanel {
         display.setBackground(ColorScheme.DARK_GRAY_COLOR);
         MaterialTabGroup tabGroup = new MaterialTabGroup(display);
         MaterialTab trials = new MaterialTab("Trials", tabGroup, trialsTab);
-        MaterialTab grit = new MaterialTab("Grit", tabGroup, gritTab);
         MaterialTab unlocks = new MaterialTab("Unlocks", tabGroup, unlocksTab);
         tabGroup.addTab(trials);
-        tabGroup.addTab(grit);
         tabGroup.addTab(unlocks);
         tabGroup.select(trials);
 
@@ -89,7 +84,7 @@ public class CrabmanModePanel extends PluginPanel {
 
         String enabled = sessionState.getEnabledCharacter();
         if (enabled.isEmpty()) {
-            sb.append("<font color='#ffb84d'>Set your character name in the plugin settings to start.</font>");
+            sb.append("<font color='#ffb84d'>Log in - Trialbound will enable itself for that character.</font>");
         } else if (sessionState.isSeasonalWorld()) {
             sb.append("<font color='#ffb84d'>Seasonal world - Trialbound is paused.</font>");
         } else if (!sessionState.isActiveCharacter()) {
@@ -133,8 +128,9 @@ public class CrabmanModePanel extends PluginPanel {
         trialsTab.refresh();
     }
 
+    /** Grit balances live in the Unlocks tab header now. */
     public void refreshGrit() {
-        gritTab.refresh();
+        unlocksTab.refresh();
     }
 
     public void refreshUnlocks() {

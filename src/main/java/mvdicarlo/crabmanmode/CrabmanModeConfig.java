@@ -4,7 +4,6 @@ import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.ConfigSection;
-import net.runelite.client.config.Range;
 
 @ConfigGroup(CrabmanModePlugin.CONFIG_GROUP)
 public interface CrabmanModeConfig extends Config {
@@ -13,12 +12,6 @@ public interface CrabmanModeConfig extends Config {
 
     @ConfigSection(name = "Group sync", description = "Party-based syncing with your group", position = 1)
     String syncSection = "sync";
-
-    @ConfigSection(name = "Grit earnings", description = "Base Grit per collection log drop while the boss is on trial. All group members must use identical values.", position = 2)
-    String gritSection = "grit";
-
-    @ConfigSection(name = "Unlock prices", description = "Grit cost to unlock an item, by the tier of its source. All group members must use identical values.", position = 3)
-    String priceSection = "prices";
 
     @ConfigSection(name = "Enforcement", description = "How strictly locks are enforced in the client", position = 4)
     String enforcementSection = "enforcement";
@@ -50,64 +43,6 @@ public interface CrabmanModeConfig extends Config {
         return "";
     }
 
-    // --- Grit earnings ---
-
-    @Range(min = 0)
-    @ConfigItem(keyName = "gritBaseEasy", name = "Easy boss base", position = 1, description = "Base Grit per on-trial clog drop from an easy-tier boss.", section = gritSection)
-    default int gritBaseEasy() {
-        return 10;
-    }
-
-    @Range(min = 0)
-    @ConfigItem(keyName = "gritBaseMedium", name = "Medium boss base", position = 2, description = "Base Grit per on-trial clog drop from a medium-tier boss.", section = gritSection)
-    default int gritBaseMedium() {
-        return 25;
-    }
-
-    @Range(min = 0)
-    @ConfigItem(keyName = "gritBaseHard", name = "Hard boss base", position = 3, description = "Base Grit per on-trial clog drop from a hard-tier boss.", section = gritSection)
-    default int gritBaseHard() {
-        return 50;
-    }
-
-    @Range(min = 0)
-    @ConfigItem(keyName = "gritBaseRaid", name = "Raid base", position = 4, description = "Base Grit per on-trial clog drop from a raid.", section = gritSection)
-    default int gritBaseRaid() {
-        return 50;
-    }
-
-    // --- Unlock prices ---
-
-    @Range(min = 0)
-    @ConfigItem(keyName = "priceEasy", name = "Easy boss item", position = 1, description = "Grit cost to unlock an item whose source is an easy-tier boss.", section = priceSection)
-    default int priceEasy() {
-        return 100;
-    }
-
-    @Range(min = 0)
-    @ConfigItem(keyName = "priceMedium", name = "Medium boss item", position = 2, description = "Grit cost to unlock an item whose source is a medium-tier boss.", section = priceSection)
-    default int priceMedium() {
-        return 250;
-    }
-
-    @Range(min = 0)
-    @ConfigItem(keyName = "priceHard", name = "Hard boss item", position = 3, description = "Grit cost to unlock an item whose source is a hard-tier boss.", section = priceSection)
-    default int priceHard() {
-        return 500;
-    }
-
-    @Range(min = 0)
-    @ConfigItem(keyName = "priceRaid", name = "Raid item", position = 4, description = "Grit cost to unlock an item whose source is a raid.", section = priceSection)
-    default int priceRaid() {
-        return 1000;
-    }
-
-    @Range(min = 0)
-    @ConfigItem(keyName = "priceNonBoss", name = "Non-boss item", position = 5, description = "Grit cost to unlock a collection log item with no boss or raid source (clues, skilling, minigames).", section = priceSection)
-    default int priceNonBoss() {
-        return 250;
-    }
-
     // --- Enforcement ---
 
     @ConfigItem(keyName = "enforceGeBlock", name = "Block GE for locked items", position = 1, description = "Grey locked collection log items out of GE search and block buy offers for them.", section = enforcementSection)
@@ -117,6 +52,11 @@ public interface CrabmanModeConfig extends Config {
 
     @ConfigItem(keyName = "enforceEquipBlock", name = "Block equipping locked items", position = 2, description = "Remove Wield/Wear/Equip options on collection log items you have not unlocked.", section = enforcementSection)
     default boolean enforceEquipBlock() {
+        return true;
+    }
+
+    @ConfigItem(keyName = "greyLockedItems", name = "Grey out locked items", position = 4, description = "Darken locked collection log items in your inventory, bank and equipment.", section = enforcementSection)
+    default boolean greyLockedItems() {
         return true;
     }
 

@@ -21,6 +21,7 @@ import javax.swing.JMenuItem;
 import javax.swing.SwingUtilities;
 
 import lombok.Value;
+import mvdicarlo.crabmanmode.SessionState;
 import mvdicarlo.crabmanmode.TrialboundChat;
 import mvdicarlo.crabmanmode.clog.ClogDataService;
 import mvdicarlo.crabmanmode.clog.ClogPage;
@@ -52,7 +53,9 @@ public class UnlocksTabPanel extends JPanel {
     private final ItemManager itemManager;
     private final ClientThread clientThread;
     private final TrialboundChat chat;
+    private final SessionState sessionState;
 
+    private final JLabel gritHeader = new JLabel();
     private final IconTextField searchField = new IconTextField();
     private final JComboBox<String> tabFilter = new JComboBox<>();
     private final JComboBox<String> stateFilter = new JComboBox<>(new String[] { "All", "Locked", "Unlocked" });
@@ -63,13 +66,14 @@ public class UnlocksTabPanel extends JPanel {
 
     @Inject
     public UnlocksTabPanel(ClogDataService clogData, GroupStateService groupState, GritService gritService,
-            ItemManager itemManager, ClientThread clientThread, TrialboundChat chat) {
+            ItemManager itemManager, ClientThread clientThread, TrialboundChat chat, SessionState sessionState) {
         this.clogData = clogData;
         this.groupState = groupState;
         this.gritService = gritService;
         this.itemManager = itemManager;
         this.clientThread = clientThread;
         this.chat = chat;
+        this.sessionState = sessionState;
 
         setLayout(new BorderLayout(0, 6));
         setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -81,6 +85,7 @@ public class UnlocksTabPanel extends JPanel {
 
         JPanel controls = new JPanel(new GridLayout(0, 1, 0, 4));
         controls.setBackground(ColorScheme.DARK_GRAY_COLOR);
+        controls.add(gritHeader);
         searchField.setIcon(IconTextField.Icon.SEARCH);
         searchField.addActionListener(e -> refresh());
         searchField.addClearListener(this::refresh);
@@ -103,6 +108,11 @@ public class UnlocksTabPanel extends JPanel {
     }
 
     public void refresh() {
+        String me = sessionState.getCurrentCharacter();
+        int mine = me.isEmpty() ? 0 : groupState.getGritBalance(me);
+        gritHeader.setText("<html><b><font color='#ffc83c'>Grit: " + mine + " yours &middot; "
+                + groupState.getPooledGrit() + " pooled</font></b></html>");
+
         if (!clogData.isLoaded()) {
             grid.removeAll();
             grid.setLayout(new GridLayout(1, 1));

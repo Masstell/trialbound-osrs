@@ -128,6 +128,9 @@ public class CrabmanModePlugin extends Plugin {
     private CrabmanModeConfig config;
 
     @Inject
+    private ConfigManager configManager;
+
+    @Inject
     private SessionState sessionState;
 
     @Inject
@@ -176,6 +179,9 @@ public class CrabmanModePlugin extends Plugin {
     private mvdicarlo.crabmanmode.enforcement.TradeWarningOverlay tradeWarningOverlay;
 
     @Inject
+    private mvdicarlo.crabmanmode.enforcement.LockedItemOverlay lockedItemOverlay;
+
+    @Inject
     private mvdicarlo.crabmanmode.ui.ClogHighlightOverlay clogHighlightOverlay;
 
     @Inject
@@ -200,7 +206,6 @@ public class CrabmanModePlugin extends Plugin {
     private String enabledCrabman = "";
     private int bronzemanIconOffset = -1; // offset for bronzeman icon
     private boolean onSeasonalWorld;
-    private boolean setupHintSent;
 
     private CrabmanModePanel panel;
 
@@ -319,6 +324,7 @@ public class CrabmanModePlugin extends Plugin {
         eventBus.register(tradeWarningService);
         eventBus.register(clogMenuService);
         overlayManager.add(tradeWarningOverlay);
+        overlayManager.add(lockedItemOverlay);
         overlayManager.add(clogHighlightOverlay);
         overlayManager.add(gritToastOverlay);
         overlayManager.add(trialsOverlay);
@@ -362,6 +368,7 @@ public class CrabmanModePlugin extends Plugin {
         eventBus.unregister(tradeWarningService);
         eventBus.unregister(clogMenuService);
         overlayManager.remove(tradeWarningOverlay);
+        overlayManager.remove(lockedItemOverlay);
         overlayManager.remove(clogHighlightOverlay);
         overlayManager.remove(gritToastOverlay);
         overlayManager.remove(trialsOverlay);
@@ -385,10 +392,6 @@ public class CrabmanModePlugin extends Plugin {
             sessionState.setSeasonalWorld(onSeasonalWorld);
             clogDataService.ensureLoaded();
 
-            if (!setupHintSent && config.enableCrabman().trim().isEmpty()) {
-                setupHintSent = true;
-                sendChatMessage("Trialbound is idle: set your character name in the plugin settings to start.");
-            }
         }
     }
 
@@ -432,6 +435,14 @@ public class CrabmanModePlugin extends Plugin {
     public void onPlayerChanged(PlayerChanged event) {
         Player player = client.getLocalPlayer();
         sessionState.setCurrentCharacter(player == null ? "" : player.getName());
+
+        // First character to log in claims the mode; changeable in settings.
+        String name = player == null ? null : player.getName();
+        if (name != null && !name.isEmpty() && config.enableCrabman().trim().isEmpty() && !onSeasonalWorld) {
+            configManager.setConfiguration(CONFIG_GROUP, "enableCrabman", name);
+            sendChatMessage("Trialbound enabled for " + name
+                    + ". Change the character name in the plugin settings if this is the wrong account.");
+        }
     }
 
     @Subscribe

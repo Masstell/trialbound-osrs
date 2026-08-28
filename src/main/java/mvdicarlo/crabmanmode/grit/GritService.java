@@ -6,7 +6,6 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import lombok.extern.slf4j.Slf4j;
-import mvdicarlo.crabmanmode.CrabmanModeConfig;
 import mvdicarlo.crabmanmode.SessionState;
 import mvdicarlo.crabmanmode.TrialboundChat;
 import mvdicarlo.crabmanmode.clog.ClogDataService;
@@ -28,7 +27,6 @@ import net.runelite.client.eventbus.Subscribe;
 @Slf4j
 @Singleton
 public class GritService {
-    private final CrabmanModeConfig config;
     private final SessionState sessionState;
     private final ClogDataService clogData;
     private final BossTierRegistry registry;
@@ -38,10 +36,9 @@ public class GritService {
     private final mvdicarlo.crabmanmode.ui.GritToastOverlay toastOverlay;
 
     @Inject
-    public GritService(CrabmanModeConfig config, SessionState sessionState, ClogDataService clogData,
+    public GritService(SessionState sessionState, ClogDataService clogData,
             BossTierRegistry registry, TrialService trialService, GroupStateService groupState, TrialboundChat chat,
             mvdicarlo.crabmanmode.ui.GritToastOverlay toastOverlay) {
-        this.config = config;
         this.sessionState = sessionState;
         this.clogData = clogData;
         this.registry = registry;
@@ -62,7 +59,7 @@ public class GritService {
         }
         String pageName = event.getPageName();
         OptionalInt override = registry.getGritBaseOverride(pageName);
-        int base = override.isPresent() ? override.getAsInt() : baseFor(registry.getTier(pageName));
+        int base = override.isPresent() ? override.getAsInt() : GritEconomy.baseGrit(registry.getTier(pageName));
         int delta = base * slot.getMultiplierPercent() / 100;
         if (delta <= 0) {
             return;
@@ -72,21 +69,6 @@ public class GritService {
                 + slot.getType().getMultiplierLabel() + ")";
         toastOverlay.push(summary);
         chat.send(summary + ". Pooled: " + groupState.getPooledGrit() + ".");
-    }
-
-    private int baseFor(TrialTier tier) {
-        switch (tier) {
-            case EASY:
-                return config.gritBaseEasy();
-            case MEDIUM:
-                return config.gritBaseMedium();
-            case HARD:
-                return config.gritBaseHard();
-            case RAID:
-                return config.gritBaseRaid();
-            default:
-                return 0;
-        }
     }
 
     /**
@@ -110,18 +92,7 @@ public class GritService {
                 return override.getAsInt();
             }
         }
-        switch (bestTier) {
-            case EASY:
-                return config.priceEasy();
-            case MEDIUM:
-                return config.priceMedium();
-            case HARD:
-                return config.priceHard();
-            case RAID:
-                return config.priceRaid();
-            default:
-                return config.priceNonBoss();
-        }
+        return GritEconomy.unlockPrice(bestTier);
     }
 
     /** Buys an unlock with pooled grit at the computed price. */

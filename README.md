@@ -30,8 +30,9 @@ member of your group sees the same trials with no coordination:
 | Weekly (Hard) | hard-tier bosses | **2x** | Monday UTC |
 | Monthly | raids | **1.5x** | 1st of month UTC |
 
-Grit per drop = tier base × multiplier. Defaults (configurable — all group members
-must use identical values):
+Grit per drop = tier base × multiplier. These values are **fixed in the plugin**
+(not settings) so every group member plays by identical rules — changing them
+requires a new build that the whole group shares:
 
 | Tier | Base Grit | Unlock price |
 |---|---|---|
@@ -58,6 +59,7 @@ or **red** (locked, tooltip shows the price). **Right-click a locked item → "U
 - **Grand Exchange — hard block**: locked items are greyed out of search, and buy
   offers for them are blocked outright.
 - **Equipping — hard block**: Wield/Wear/Equip is removed on locked items.
+- **Inventory/bank/equipment**: locked items you're holding are greyed out.
 - **Player trades — warning only**: an overlay lists any locked items in the trade
   window and accepting prints a warning. Trades are honor-system.
 
@@ -75,20 +77,19 @@ Setup, for every member:
 
 1. Agree on a **party passphrase** (any string — treat it like a password) and a
    **group password**.
-2. In the plugin config, set your **character name**, the **party passphrase**, and
-   the **group password**. The plugin joins the party automatically on login.
-3. Use identical Grit/price settings across the group.
+2. In the plugin config, set the **party passphrase** and the **group password**.
+   The plugin joins the party automatically on login.
 
 The group password authenticates sync messages (HMAC-SHA256), so someone who only
 knows the party passphrase cannot inject unlocks or Grit.
 
 ## Getting started
 
-1. Configure your character name in the plugin settings (the mode only runs for that
-   character).
-2. Log in and **open your collection log once** — the plugin auto-runs its search to
-   read which items you have already obtained (re-open it whenever the plugin asks to
-   re-sync).
+1. Log in — the first character you log in with claims the mode automatically
+   (change the character name in settings if it picked the wrong account; the mode
+   only runs for that character).
+2. **Open your collection log once** — the plugin auto-runs its search to read which
+   items you have already obtained (re-open it whenever the plugin asks to re-sync).
 3. Enable the in-game setting **"Collection log - New addition notification"**
    (chat or popup) for the most robust drop detection.
 4. Keep the **Loot Tracker** plugin enabled — a few sources (Wintertodt, Tempoross,
