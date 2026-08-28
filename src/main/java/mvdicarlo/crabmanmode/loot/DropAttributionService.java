@@ -256,7 +256,18 @@ public class DropAttributionService {
             if (resolvedTick != null && tick - resolvedTick <= SERVER_LOOT_DEDUPE_TICKS) {
                 continue; // duplicate event for the same acquisition
             }
-            emit(itemId, page.map(ClogPage::getName).orElse(null), sourceName, tick);
+            String pageName = page.map(ClogPage::getName).orElse(null);
+            if (pageName == null && !ACQUISITION_SOURCE.equals(sourceName)) {
+                // A real loot event containing an item unique to ONE page is
+                // self-attributing - no alias needed. (Possession-path gains
+                // must not use this: craftable clog items like Shayzien
+                // armour would become a grit printing press.)
+                Set<ClogPage> itemPages = clogData.getPagesForItem(itemId);
+                if (itemPages.size() == 1) {
+                    pageName = itemPages.iterator().next().getName();
+                }
+            }
+            emit(itemId, pageName, sourceName, tick);
         }
         if (!page.isPresent()) {
             log.debug("Loot source '{}' does not resolve to a collection log page", sourceName);
