@@ -98,8 +98,8 @@ import net.runelite.http.api.worlds.WorldResult;
 import okhttp3.OkHttpClient;
 
 @Slf4j
-@PluginDescriptor(name = "Group Bronzeman Mode", description = "Modification of bronzeman mode plugin to support group bronzeman. Limits access to buying an item on the Grand Exchange until it is obtained otherwise.", tags = {
-        "overlay", "bronzeman", "crabman", "group bronzeman" })
+@PluginDescriptor(name = "Trialbound", description = "Collection-log-locked game mode: clog items are locked until obtained or purchased with Grit earned from rotating boss trials. Solo or group.", tags = {
+        "overlay", "collection log", "clog", "grit", "trials", "bronzeman", "group" })
 public class CrabmanModePlugin extends Plugin {
     static final String CONFIG_GROUP = "crabmanmode";
     private static final String GBM_UNLOCKS_STRING = "!gbmunlocks";
@@ -159,6 +159,9 @@ public class CrabmanModePlugin extends Plugin {
     private CrabmanModeConfig config;
 
     @Inject
+    private SessionState sessionState;
+
+    @Inject
     private CrabmanModeOverlay CrabmanModeOverlay;
 
     @Inject
@@ -204,7 +207,7 @@ public class CrabmanModePlugin extends Plugin {
         final BufferedImage icon = ImageUtil.loadImageResource(getClass(), "/bronzeman_icon.png");
 
         navButton = NavigationButton.builder()
-                .tooltip("Group Bronzeman unlocks")
+                .tooltip("Trialbound")
                 .icon(icon)
                 .panel(panel)
                 .priority(6)
@@ -224,7 +227,11 @@ public class CrabmanModePlugin extends Plugin {
 
         clientThread.invoke(() -> {
             if (client.getGameState() == GameState.LOGGED_IN) {
+                if (client.getLocalPlayer() != null) {
+                    sessionState.setCurrentCharacter(client.getLocalPlayer().getName());
+                }
                 onSeasonalWorld = isSeasonalWorld(client.getWorld());
+                sessionState.setSeasonalWorld(onSeasonalWorld);
                 // A player can not be a bronzeman on a seasonal world.
                 if (!onSeasonalWorld) {
                     setChatboxName(getNameChatbox());
@@ -258,6 +265,7 @@ public class CrabmanModePlugin extends Plugin {
             loadResources();
 
             onSeasonalWorld = isSeasonalWorld(client.getWorld());
+            sessionState.setSeasonalWorld(onSeasonalWorld);
         }
         if (e.getGameState() == GameState.LOGIN_SCREEN) {
             databaseRepo.close();
@@ -325,6 +333,7 @@ public class CrabmanModePlugin extends Plugin {
     @Subscribe
     public void onPlayerChanged(PlayerChanged event) {
         Player player = client.getLocalPlayer();
+        sessionState.setCurrentCharacter(player == null ? "" : player.getName());
         if (player != null) {
             String username = player.getName();
             if (username == null || username.isEmpty()) {
@@ -542,6 +551,7 @@ public class CrabmanModePlugin extends Plugin {
 
     private void updateAllowedCrabman() {
         enabledCrabman = config.enableCrabman();
+        sessionState.setEnabledCharacter(enabledCrabman);
         // Note: Semi-unsafe to send null but since we don't use the event it should be
         // fine
         onPlayerChanged(null);

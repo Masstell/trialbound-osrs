@@ -27,8 +27,8 @@ dependencies {
 	testImplementation group: 'net.runelite', name:'jshell', version: runeLiteVersion
 }
 
-group = 'mvdicarlo'
-version = '1.0.1'
+group = 'com.masstell.trialbound'
+version = '0.1.0'
 
 application {
     mainClass = 'mvdicarlo.crabmanmode.CrabmanModePluginTest'
