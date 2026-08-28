@@ -34,9 +34,8 @@ import net.runelite.client.ui.overlay.tooltip.TooltipManager;
  */
 @Singleton
 public class ClogHighlightOverlay extends Overlay {
-    private static final Color UNLOCKED_MARK = new Color(0, 255, 0, 200);
-    private static final Color LOCKED_MARK = new Color(255, 40, 40, 220);
-    private static final Color LOCKED_WASH = new Color(255, 0, 0, 45);
+    private static final Color UNLOCKED_OUTLINE = new Color(0, 255, 0, 200);
+    private static final Color LOCKED_OUTLINE = new Color(255, 40, 40, 220);
 
     private final Client client;
     private final ItemManager itemManager;
@@ -93,17 +92,11 @@ public class ClogHighlightOverlay extends Overlay {
             }
             Rectangle bounds = child.getBounds();
             TbEventRecord unlock = unlocked.get(itemId);
-            if (unlock != null) {
-                graphics.setColor(UNLOCKED_MARK);
-                graphics.fillRect(bounds.x + bounds.width - 7, bounds.y + 2, 5, 5);
-            } else {
-                graphics.setColor(LOCKED_WASH);
-                graphics.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
-                // Outline the item sprite itself in red (quantity 1 so stack
-                // digits are not outlined too).
-                graphics.drawImage(itemManager.getItemOutline(itemId, 1, LOCKED_MARK),
-                        bounds.x, bounds.y, null);
-            }
+            // Outline the item sprite itself (quantity 1 so stack digits are
+            // not outlined too): green = group-unlocked, red = locked.
+            Color outline = unlock != null ? UNLOCKED_OUTLINE : LOCKED_OUTLINE;
+            graphics.drawImage(itemManager.getItemOutline(itemId, 1, outline),
+                    bounds.x, bounds.y, null);
 
             if (bounds.contains(mouse.getX(), mouse.getY())) {
                 String name = clogData.getItemName(itemId);

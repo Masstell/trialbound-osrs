@@ -837,10 +837,7 @@ public class CrabmanModePlugin extends Plugin {
         }
 
         unlockImage = ImageUtil.loadImageResource(getClass(), "/item-unlocked.png");
-        // Same logo as the sidebar, shrunk to mod-icon size for the chat badge.
-        BufferedImage image = ImageUtil.resizeImage(
-                ImageUtil.loadImageResource(getClass(), "/trialbound_icon.png"), 13, 13);
-        IndexedSprite indexedSprite = ImageUtil.getImageIndexedSprite(image, client);
+        IndexedSprite indexedSprite = ImageUtil.getImageIndexedSprite(chatBadgeImage(), client);
 
         bronzemanIconOffset = modIcons.length;
 
@@ -848,6 +845,42 @@ public class CrabmanModePlugin extends Plugin {
         newModIcons[newModIcons.length - 1] = indexedSprite;
 
         client.setModIcons(newModIcons);
+    }
+
+    private static final int BADGE_SIZE = 14;
+
+    /**
+     * The sidebar logo as a chat badge: the source PNG carries transparent
+     * padding and an off-center glyph, so crop to the opaque content, then
+     * scale and center it to fill the badge box.
+     */
+    private static BufferedImage chatBadgeImage() {
+        BufferedImage src = ImageUtil.loadImageResource(CrabmanModePlugin.class, "/trialbound_icon.png");
+        int minX = src.getWidth(), minY = src.getHeight(), maxX = -1, maxY = -1;
+        for (int y = 0; y < src.getHeight(); y++) {
+            for (int x = 0; x < src.getWidth(); x++) {
+                if (((src.getRGB(x, y) >>> 24) & 0xFF) > 10) {
+                    minX = Math.min(minX, x);
+                    maxX = Math.max(maxX, x);
+                    minY = Math.min(minY, y);
+                    maxY = Math.max(maxY, y);
+                }
+            }
+        }
+        if (maxX < 0) {
+            return ImageUtil.resizeImage(src, BADGE_SIZE, BADGE_SIZE);
+        }
+        BufferedImage cropped = src.getSubimage(minX, minY, maxX - minX + 1, maxY - minY + 1);
+        double scale = (double) BADGE_SIZE / Math.max(cropped.getWidth(), cropped.getHeight());
+        int w = Math.max(1, (int) Math.round(cropped.getWidth() * scale));
+        int h = Math.max(1, (int) Math.round(cropped.getHeight() * scale));
+        BufferedImage badge = new BufferedImage(BADGE_SIZE, BADGE_SIZE, BufferedImage.TYPE_INT_ARGB);
+        java.awt.Graphics2D g = badge.createGraphics();
+        g.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION,
+                java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        g.drawImage(cropped, (BADGE_SIZE - w) / 2, (BADGE_SIZE - h) / 2, w, h, null);
+        g.dispose();
+        return badge;
     }
 
 }
