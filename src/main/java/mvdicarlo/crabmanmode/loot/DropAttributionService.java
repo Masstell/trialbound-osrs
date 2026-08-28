@@ -1,6 +1,7 @@
 package mvdicarlo.crabmanmode.loot;
 
 import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -52,11 +53,12 @@ public class DropAttributionService {
     /** Retention for the recently-resolved item map. */
     private static final int RESOLVED_RETENTION_TICKS = 10;
     /**
-     * How long a page-linked kill can attribute possession gains OF THAT
-     * PAGE'S ITEMS - long enough for kill-then-loot designs (Gauntlet chest),
-     * safe because the item must belong to the killed NPC's page.
+     * How long a page-linked kill can attribute possession gains of that
+     * page's items. Generous, because causation is enforced structurally:
+     * each kill is CONSUMED by the acquisition it attributes (one kill, one
+     * reward), so a lingering kill cannot license endless crafted copies.
      */
-    private static final int KILL_ATTRIBUTION_TICKS = 50;
+    private static final int KILL_ATTRIBUTION_TICKS = 250;
     /** A chest reopened with the identical item multiset within this window is ignored. */
     private static final long CHEST_FINGERPRINT_RETENTION_MS = 10 * 60_000L;
 
@@ -69,8 +71,8 @@ public class DropAttributionService {
 
     private final Map<String, Integer> recentServerLootTicks = new HashMap<>();
     private final Map<Integer, Integer> recentlyResolved = new HashMap<>();
-    /** Page name -> tick of a recent kill of a page-linked NPC. */
-    private final Map<String, Integer> recentKillPages = new HashMap<>();
+    /** Page name -> ticks of recent kills of that page's NPCs (one credit per kill). */
+    private final Map<String, ArrayDeque<Integer>> recentKillPages = new HashMap<>();
     private final Map<String, ChestFingerprint> chestFingerprints = new HashMap<>();
     private final List<PendingNotification> pendingNotifications = new ArrayList<>();
 
@@ -203,8 +205,9 @@ public class DropAttributionService {
             return;
         }
         String name = event.getActor().getName();
-        clogData.resolveSourceName(name).ifPresent(page ->
-                recentKillPages.put(page.getName(), client.getTickCount()));
+        clogData.resolveSourceName(name).ifPresent(page -> recentKillPages
+                .computeIfAbsent(page.getName(), k -> new ArrayDeque<>())
+                .addLast(client.getTickCount()));
     }
 
     @Subscribe
@@ -212,7 +215,12 @@ public class DropAttributionService {
         int tick = client.getTickCount();
         recentlyResolved.values().removeIf(t -> tick - t > RESOLVED_RETENTION_TICKS);
         recentServerLootTicks.values().removeIf(t -> tick - t > RESOLVED_RETENTION_TICKS);
-        recentKillPages.values().removeIf(t -> tick - t > KILL_ATTRIBUTION_TICKS);
+        for (ArrayDeque<Integer> ticks : recentKillPages.values()) {
+            while (!ticks.isEmpty() && tick - ticks.peekFirst() > KILL_ATTRIBUTION_TICKS) {
+                ticks.removeFirst();
+            }
+        }
+        recentKillPages.values().removeIf(ArrayDeque::isEmpty);
 
         Iterator<PendingNotification> it = pendingNotifications.iterator();
         while (it.hasNext()) {
@@ -280,21 +288,24 @@ public class DropAttributionService {
         }
     }
 
-    /** The most recent kill within the window whose page contains this item, or null. */
+    /**
+     * The page of a recent kill whose item set contains this item, or null.
+     * A match CONSUMES one kill credit - one kill attributes one reward, so
+     * lingering kills cannot license endless crafted copies.
+     */
     private String recentKillPageContaining(int itemId, int tick) {
-        String bestPage = null;
-        int bestTick = Integer.MIN_VALUE;
-        for (Map.Entry<String, Integer> entry : recentKillPages.entrySet()) {
-            if (tick - entry.getValue() > KILL_ATTRIBUTION_TICKS || entry.getValue() <= bestTick) {
+        for (Map.Entry<String, ArrayDeque<Integer>> entry : recentKillPages.entrySet()) {
+            ArrayDeque<Integer> ticks = entry.getValue();
+            if (ticks.isEmpty() || tick - ticks.peekLast() > KILL_ATTRIBUTION_TICKS) {
                 continue;
             }
             Optional<ClogPage> page = clogData.getPage(entry.getKey());
             if (page.isPresent() && page.get().getItemIds().contains(itemId)) {
-                bestPage = entry.getKey();
-                bestTick = entry.getValue();
+                ticks.removeLast();
+                return entry.getKey();
             }
         }
-        return bestPage;
+        return null;
     }
 
     private void emit(int itemId, String pageName, String sourceName, int tick) {
