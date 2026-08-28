@@ -28,12 +28,15 @@ import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.game.ItemManager;
 
 /**
- * Acquisition-by-possession: gaining a clog item in your inventory unlocks it
- * (shops - including custom minigame shops like Petrified Pete's - reward
- * claims, combining pieces), EXCEPT in contexts where a gain is not "earning
- * it": trade windows, the GE, bank/deposit/seed vault withdrawals, death
- * reclaims, and ground pickups (drop-trading). Exclusions fail open: a missed
- * one unlocks too eagerly rather than blocking play.
+ * Acquisition-by-possession: detects clog items gained in the inventory
+ * outside loot events (shops - including custom minigame shops like
+ * Petrified Pete's - and direct-to-inventory rewards), EXCEPT in contexts
+ * where a gain is a transfer, not an earning: trade windows, the GE,
+ * bank/deposit/seed vault withdrawals, death reclaims, and ground pickups
+ * (tracked per clicked item so distance cannot outlast the exclusion).
+ * Surviving gains go to DropAttributionService, which is deny-by-default:
+ * only shop-purchasable items or items claimed by a recent page-linked
+ * kill actually unlock.
  */
 @Slf4j
 @Singleton
@@ -46,8 +49,12 @@ public class ShopAcquisitionService {
             InterfaceID.SEED_VAULT, InterfaceID.SEED_VAULT_DEPOSIT,
             InterfaceID.GRAVESTONE_RETRIEVAL, InterfaceID.DEATH_OFFICE, InterfaceID.DEATHKEEP);
 
-    /** Gains within this many ticks of a ground "Take" are pickups, not earnings. */
-    private static final int TAKE_WINDOW_TICKS = 3;
+    /**
+     * How long a clicked ground item stays excluded from possession gains.
+     * Tracked per item id (not a global window), so walking to a distant
+     * drop cannot outlast the exclusion.
+     */
+    private static final int GROUND_TAKE_TICKS = 100;
 
     private final Client client;
     private final ItemManager itemManager;
@@ -58,8 +65,9 @@ public class ShopAcquisitionService {
 
     private final Map<Integer, Integer> inventorySnapshot = new HashMap<>();
     private final Set<Integer> openExcludedInterfaces = new HashSet<>();
+    /** Canonical item id -> tick of a ground-item click on it (Take or telegrab). */
+    private final Map<Integer, Integer> pendingGroundTakes = new HashMap<>();
     private boolean snapshotValid;
-    private int lastTakeTick = -100;
 
     @Inject
     public ShopAcquisitionService(Client client, ItemManager itemManager, SessionState sessionState,
@@ -121,8 +129,17 @@ public class ShopAcquisitionService {
 
     @Subscribe
     public void onMenuOptionClicked(MenuOptionClicked event) {
-        if ("Take".equals(event.getMenuOption())) {
-            lastTakeTick = client.getTickCount();
+        switch (event.getMenuAction()) {
+            case GROUND_ITEM_FIRST_OPTION:
+            case GROUND_ITEM_SECOND_OPTION:
+            case GROUND_ITEM_THIRD_OPTION: // "Take"
+            case GROUND_ITEM_FOURTH_OPTION:
+            case GROUND_ITEM_FIFTH_OPTION:
+            case WIDGET_TARGET_ON_GROUND_ITEM: // telegrab
+                pendingGroundTakes.put(itemManager.canonicalize(event.getId()), client.getTickCount());
+                break;
+            default:
+                break;
         }
     }
 
@@ -133,17 +150,25 @@ public class ShopAcquisitionService {
         }
         Map<Integer, Integer> current = countInventory(event.getItemContainer());
         boolean hadBaseline = snapshotValid;
-        boolean excluded = !openExcludedInterfaces.isEmpty()
-                || client.getTickCount() - lastTakeTick <= TAKE_WINDOW_TICKS;
+        int tick = client.getTickCount();
+        pendingGroundTakes.values().removeIf(t -> tick - t > GROUND_TAKE_TICKS);
 
-        if (hadBaseline && !excluded && sessionState.isActive() && clogData.isLoaded()) {
+        if (hadBaseline && openExcludedInterfaces.isEmpty()
+                && sessionState.isActive() && clogData.isLoaded()) {
             Set<Integer> gained = new LinkedHashSet<>();
             for (Map.Entry<Integer, Integer> entry : current.entrySet()) {
                 int itemId = entry.getKey();
-                if (entry.getValue() > inventorySnapshot.getOrDefault(itemId, 0)
-                        && clogData.isClogItem(itemId)) {
-                    gained.add(itemId);
+                if (entry.getValue() <= inventorySnapshot.getOrDefault(itemId, 0)
+                        || !clogData.isClogItem(itemId)) {
+                    continue;
                 }
+                if (pendingGroundTakes.remove(itemId) != null) {
+                    // A pickup, not an earning; ground loot from own kills is
+                    // already handled by the loot-event path.
+                    log.debug("Ignoring ground pickup of clog item {}", itemId);
+                    continue;
+                }
+                gained.add(itemId);
             }
             if (!gained.isEmpty()) {
                 log.info("Inventory acquisition of clog items {} (no excluded context)", gained);

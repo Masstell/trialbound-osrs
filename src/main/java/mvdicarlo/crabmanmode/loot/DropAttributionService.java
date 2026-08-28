@@ -53,10 +53,11 @@ public class DropAttributionService {
     /** Retention for the recently-resolved item map. */
     private static final int RESOLVED_RETENTION_TICKS = 10;
     /**
-     * How long a page-linked kill can attribute possession gains of that
-     * page's items. Generous, because causation is enforced structurally:
-     * each kill is CONSUMED by the acquisition it attributes (one kill, one
-     * reward), so a lingering kill cannot license endless crafted copies.
+     * How long a page-linked kill can claim possession gains of that page's
+     * items. Generous enough for walk-to-a-chest claims (CG, Royal Titans);
+     * safe to be generous because each kill credit is CONSUMED by the
+     * acquisition it attributes, and unclaimed possession gains of non-shop
+     * items are denied outright rather than unlocked.
      */
     private static final int KILL_ATTRIBUTION_TICKS = 250;
     /** A chest reopened with the identical item multiset within this window is ignored. */
@@ -68,6 +69,7 @@ public class DropAttributionService {
     private final SessionState sessionState;
     private final ClogDataService clogData;
     private final ObtainedSyncService obtainedSync;
+    private final ShopItemRegistry shopItems;
 
     private final Map<String, Integer> recentServerLootTicks = new HashMap<>();
     private final Map<Integer, Integer> recentlyResolved = new HashMap<>();
@@ -78,13 +80,15 @@ public class DropAttributionService {
 
     @Inject
     public DropAttributionService(Client client, ItemManager itemManager, EventBus eventBus,
-            SessionState sessionState, ClogDataService clogData, ObtainedSyncService obtainedSync) {
+            SessionState sessionState, ClogDataService clogData, ObtainedSyncService obtainedSync,
+            ShopItemRegistry shopItems) {
         this.client = client;
         this.itemManager = itemManager;
         this.eventBus = eventBus;
         this.sessionState = sessionState;
         this.clogData = clogData;
         this.obtainedSync = obtainedSync;
+        this.shopItems = shopItems;
     }
 
     private boolean ready() {
@@ -163,8 +167,9 @@ public class DropAttributionService {
     }
 
     /**
-     * Acquisitions detected outside loot events (game shop purchases). Runs
-     * the standard pipeline: clog filter, dedupe, unlock; no page = no grit.
+     * Acquisitions detected outside loot events. Deny-by-default: only
+     * shop-purchasable items (unlock, no grit) and items claimed by a recent
+     * page-linked kill (unlock + grit) survive the pipeline.
      */
     public void onExternalAcquisition(String sourceName, Collection<Integer> canonicalItemIds) {
         if (!ready()) {
@@ -271,10 +276,16 @@ public class DropAttributionService {
             String pageName = page.map(ClogPage::getName).orElse(null);
             if (pageName == null) {
                 if (ACQUISITION_SOURCE.equals(sourceName)) {
-                    // Possession gains attribute to a recent page-linked kill,
-                    // but only when the item belongs to that page (so smithing
-                    // Shayzien armour near the ring cannot print grit).
+                    // Possession gains are deny-by-default: they count only
+                    // for shop-purchasable items (unlock, no grit) or when a
+                    // recent page-linked kill claims them (unlock + grit).
+                    // Everything else - handed items, crafting, ground drops -
+                    // needs a real loot event or the first-time clog message.
                     pageName = batchKillAttribution(itemId, tick, batchAttributed);
+                    if (pageName == null && !shopItems.isShopItem(itemId)) {
+                        log.info("Possession gain of {} denied: not shop-purchasable and no recent kill", itemId);
+                        continue;
+                    }
                 } else {
                     // A real loot event containing an item unique to ONE page
                     // is self-attributing - no alias needed.
