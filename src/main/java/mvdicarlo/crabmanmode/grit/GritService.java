@@ -35,10 +35,12 @@ public class GritService {
     private final TrialService trialService;
     private final GroupStateService groupState;
     private final TrialboundChat chat;
+    private final mvdicarlo.crabmanmode.ui.GritToastOverlay toastOverlay;
 
     @Inject
     public GritService(CrabmanModeConfig config, SessionState sessionState, ClogDataService clogData,
-            BossTierRegistry registry, TrialService trialService, GroupStateService groupState, TrialboundChat chat) {
+            BossTierRegistry registry, TrialService trialService, GroupStateService groupState, TrialboundChat chat,
+            mvdicarlo.crabmanmode.ui.GritToastOverlay toastOverlay) {
         this.config = config;
         this.sessionState = sessionState;
         this.clogData = clogData;
@@ -46,6 +48,7 @@ public class GritService {
         this.trialService = trialService;
         this.groupState = groupState;
         this.chat = chat;
+        this.toastOverlay = toastOverlay;
     }
 
     @Subscribe
@@ -65,8 +68,10 @@ public class GritService {
             return;
         }
         groupState.addTrialGrit(event.getItemId(), delta, slot.trialKey(), slot.getMultiplierPercent());
-        chat.send("+" + delta + " Grit - " + pageName + " (" + slot.getType().getDisplayName() + " "
-                + slot.getType().getMultiplierLabel() + "). Pooled: " + groupState.getPooledGrit() + ".");
+        String summary = "+" + delta + " Grit - " + pageName + " (" + slot.getType().getDisplayName() + " "
+                + slot.getType().getMultiplierLabel() + ")";
+        toastOverlay.push(summary);
+        chat.send(summary + ". Pooled: " + groupState.getPooledGrit() + ".");
     }
 
     private int baseFor(TrialTier tier) {

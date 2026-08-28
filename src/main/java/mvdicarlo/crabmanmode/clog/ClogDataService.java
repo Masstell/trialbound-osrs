@@ -44,6 +44,7 @@ public class ClogDataService {
     private volatile Map<String, ClogPage> pagesByNormalizedName = Collections.emptyMap();
     private volatile Map<Integer, Set<ClogPage>> itemToPages = Collections.emptyMap();
     private volatile Map<String, List<Integer>> idsByNormalizedItemName = Collections.emptyMap();
+    private volatile Map<Integer, String> displayNames = Collections.emptyMap();
 
     @Inject
     public ClogDataService(Client client, ClientThread clientThread, ItemManager itemManager, EventBus eventBus,
@@ -116,12 +117,15 @@ public class ClogDataService {
         }
 
         Map<String, List<Integer>> byName = new HashMap<>();
+        Map<Integer, String> names = new HashMap<>();
         for (int itemId : itemIds) {
-            String itemName = ClogText.normalize(itemManager.getItemComposition(itemId).getName());
-            byName.computeIfAbsent(itemName, k -> new ArrayList<>(1)).add(itemId);
+            String displayName = itemManager.getItemComposition(itemId).getName();
+            names.put(itemId, displayName);
+            byName.computeIfAbsent(ClogText.normalize(displayName), k -> new ArrayList<>(1)).add(itemId);
         }
         byName.values().forEach(Collections::sort);
 
+        displayNames = Collections.unmodifiableMap(names);
         allClogItemIds = Collections.unmodifiableSet(itemIds);
         pagesByNormalizedName = Collections.unmodifiableMap(pages);
         itemToPages = Collections.unmodifiableMap(byItem);
@@ -177,5 +181,10 @@ public class ClogDataService {
     /** Clog item ids whose item name matches (normalized); ascending id order. */
     public List<Integer> getIdsForItemName(String itemName) {
         return idsByNormalizedItemName.getOrDefault(ClogText.normalize(itemName), Collections.emptyList());
+    }
+
+    /** Display name for a clog item, safe to call from any thread. */
+    public String getItemName(int itemId) {
+        return displayNames.getOrDefault(itemId, "Item " + itemId);
     }
 }

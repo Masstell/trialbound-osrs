@@ -196,6 +196,18 @@ public class CrabmanModePlugin extends Plugin {
     @Inject
     private mvdicarlo.crabmanmode.enforcement.TradeWarningOverlay tradeWarningOverlay;
 
+    @Inject
+    private mvdicarlo.crabmanmode.ui.ClogHighlightOverlay clogHighlightOverlay;
+
+    @Inject
+    private mvdicarlo.crabmanmode.ui.ClogMenuService clogMenuService;
+
+    @Inject
+    private mvdicarlo.crabmanmode.ui.GritToastOverlay gritToastOverlay;
+
+    @Inject
+    private mvdicarlo.crabmanmode.ui.TrialsOverlay trialsOverlay;
+
     @Getter
     private BufferedImage unlockImage = null;
 
@@ -229,6 +241,7 @@ public class CrabmanModePlugin extends Plugin {
                     }
                 }
             });
+            refreshPanel(true, false);
         }
 
         @Override
@@ -241,8 +254,44 @@ public class CrabmanModePlugin extends Plugin {
                     sendChatMessage("Re-locked: " + client.getItemDefinition(itemId).getName() + ".");
                 }
             });
+            refreshPanel(true, false);
+        }
+
+        @Override
+        public void onGritChanged() {
+            refreshPanel(false, true);
         }
     };
+
+    /** Marshals panel refreshes to the Swing thread. */
+    private void refreshPanel(boolean unlocks, boolean grit) {
+        if (panel == null) {
+            return;
+        }
+        javax.swing.SwingUtilities.invokeLater(() -> {
+            if (unlocks) {
+                panel.refreshUnlocks();
+            }
+            if (grit) {
+                panel.refreshGrit();
+                panel.refreshTrials();
+            }
+        });
+    }
+
+    @Subscribe
+    public void onTrialsChanged(mvdicarlo.crabmanmode.events.TrialsChanged event) {
+        if (panel != null) {
+            javax.swing.SwingUtilities.invokeLater(panel::refreshTrials);
+        }
+    }
+
+    @Subscribe
+    public void onClogDataLoaded(mvdicarlo.crabmanmode.events.ClogDataLoaded event) {
+        if (panel != null) {
+            javax.swing.SwingUtilities.invokeLater(panel::refreshAll);
+        }
+    }
 
     @Provides
     CrabmanModeConfig provideConfig(ConfigManager configManager) {
@@ -257,7 +306,8 @@ public class CrabmanModePlugin extends Plugin {
         updateAllowedCrabman();
 
         panel = injector.getInstance(CrabmanModePanel.class);
-        final BufferedImage icon = ImageUtil.loadImageResource(getClass(), "/bronzeman_icon.png");
+        final BufferedImage icon = ImageUtil.resizeImage(
+                ImageUtil.loadImageResource(getClass(), "/trialbound_icon.png"), 16, 16);
 
         navButton = NavigationButton.builder()
                 .tooltip("Trialbound")
@@ -288,7 +338,11 @@ public class CrabmanModePlugin extends Plugin {
         eventBus.register(geEnforcementService);
         eventBus.register(equipEnforcementService);
         eventBus.register(tradeWarningService);
+        eventBus.register(clogMenuService);
         overlayManager.add(tradeWarningOverlay);
+        overlayManager.add(clogHighlightOverlay);
+        overlayManager.add(gritToastOverlay);
+        overlayManager.add(trialsOverlay);
         partySyncService.startUp();
         clogDataService.ensureLoaded();
 
@@ -328,7 +382,11 @@ public class CrabmanModePlugin extends Plugin {
         eventBus.unregister(geEnforcementService);
         eventBus.unregister(equipEnforcementService);
         eventBus.unregister(tradeWarningService);
+        eventBus.unregister(clogMenuService);
         overlayManager.remove(tradeWarningOverlay);
+        overlayManager.remove(clogHighlightOverlay);
+        overlayManager.remove(gritToastOverlay);
+        overlayManager.remove(trialsOverlay);
         partySyncService.shutDown();
         clientToolbar.removeNavigation(navButton);
         clientThread.invoke(() -> {
@@ -425,54 +483,6 @@ public class CrabmanModePlugin extends Plugin {
             return false;
         }
         return playerName.equals(enabledCrabman);
-    }
-
-    public void unlockFilter(boolean showUntradeableItems, SortOption sortOption, String search) {
-        List<ItemObject> filteredItems = new ArrayList<ItemObject>();
-
-        Map<Integer, TbEventRecord> unlockedItems = groupState.getUnlockedItems();
-
-        for (TbEventRecord unlockedItem : unlockedItems.values()) {
-            ItemComposition composition = client.getItemDefinition(unlockedItem.getItemId());
-
-            boolean tradeable = composition.isTradeable();
-            if (!showUntradeableItems && !tradeable)
-                continue;
-
-            String itemName = composition.getMembersName();
-            if (!search.isEmpty() && !itemName.toLowerCase().contains(search))
-                continue;
-
-            AsyncBufferedImage icon = itemManager.getImage(unlockedItem.getItemId());
-
-            ItemObject item = new ItemObject(unlockedItem.getItemId(), unlockedItem.getItemName(), tradeable,
-                    unlockedItem.createdInstant(), icon);
-            filteredItems.add(item);
-        }
-
-        if (sortOption.name() == "NEW_TO_OLD") {
-            Collections.reverse(filteredItems);
-        }
-
-        if (sortOption.name() == "ALPHABETICAL_ASC") {
-            Collections.sort(filteredItems, new Comparator<ItemObject>() {
-                @Override
-                public int compare(ItemObject i1, ItemObject i2) {
-                    return i1.getName().compareToIgnoreCase(i2.getName());
-                }
-            });
-        }
-
-        if (sortOption.name() == "ALPHABETICAL_DESC") {
-            Collections.sort(filteredItems, new Comparator<ItemObject>() {
-                @Override
-                public int compare(ItemObject i1, ItemObject i2) {
-                    return i2.getName().compareToIgnoreCase(i1.getName());
-                }
-            });
-        }
-
-        panel.displayItems(filteredItems); // Redraw the panel
     }
 
     public void sendChatMessage(String chatMessage) {
@@ -791,18 +801,4 @@ public class CrabmanModePlugin extends Plugin {
         client.setModIcons(newModIcons);
     }
 
-    public boolean isDeletionConfirmed(final String message, final String title) {
-        int confirm = JOptionPane.showConfirmDialog(panel,
-                message, title, JOptionPane.OK_CANCEL_OPTION);
-
-        return confirm == JOptionPane.YES_OPTION;
-    }
-
-    public void queueItemDelete(int id) {
-        if (!isLoggedIntoCrabman()) {
-            return;
-        }
-        // The relock tombstone announces itself via the group state listener.
-        groupState.relock(id);
-    }
 }
