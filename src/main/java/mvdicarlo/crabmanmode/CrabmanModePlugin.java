@@ -200,6 +200,7 @@ public class CrabmanModePlugin extends Plugin {
     private String enabledCrabman = "";
     private int bronzemanIconOffset = -1; // offset for bronzeman icon
     private boolean onSeasonalWorld;
+    private boolean setupHintSent;
 
     private CrabmanModePanel panel;
 
@@ -383,6 +384,11 @@ public class CrabmanModePlugin extends Plugin {
             onSeasonalWorld = isSeasonalWorld(client.getWorld());
             sessionState.setSeasonalWorld(onSeasonalWorld);
             clogDataService.ensureLoaded();
+
+            if (!setupHintSent && config.enableCrabman().trim().isEmpty()) {
+                setupHintSent = true;
+                sendChatMessage("Trialbound is idle: set your character name in the plugin settings to start.");
+            }
         }
     }
 
@@ -491,8 +497,7 @@ public class CrabmanModePlugin extends Plugin {
         }
         groupState.initialize(groupKey);
         if (panel != null) {
-            javax.swing.SwingUtilities.invokeLater(() -> panel.displayStatus(
-                    "Trialbound ready: " + groupState.getUnlockedItems().size() + " unlocks loaded."));
+            javax.swing.SwingUtilities.invokeLater(panel::refreshAll);
         }
     }
 
