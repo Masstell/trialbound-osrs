@@ -102,6 +102,8 @@ public class CrabmanModePlugin extends Plugin {
     private static final String TB_RECENT_STRING = "!tbrecent";
     private static final String TB_CLOG_DEBUG_STRING = "!tbclog";
     private static final String TB_GRIT_STRING = "!grit";
+    /** Testing backdoor - remove or gate before real group play. */
+    private static final String TB_GRANT_STRING = "!tbgrant";
 
     @Inject
     private Client client;
@@ -311,6 +313,7 @@ public class CrabmanModePlugin extends Plugin {
         chatCommandManager.registerCommand(TB_RECENT_STRING, this::OnRecentUnlocksCommand);
         chatCommandManager.registerCommand(TB_CLOG_DEBUG_STRING, this::onClogDebugCommand);
         chatCommandManager.registerCommand(TB_GRIT_STRING, this::onGritCommand);
+        chatCommandManager.registerCommand(TB_GRANT_STRING, this::onGrantCommand);
 
         eventBus.register(obtainedSyncService);
         eventBus.register(dropAttributionService);
@@ -356,6 +359,7 @@ public class CrabmanModePlugin extends Plugin {
         chatCommandManager.unregisterCommand(TB_RECENT_STRING);
         chatCommandManager.unregisterCommand(TB_CLOG_DEBUG_STRING);
         chatCommandManager.unregisterCommand(TB_GRIT_STRING);
+        chatCommandManager.unregisterCommand(TB_GRANT_STRING);
         eventBus.unregister(obtainedSyncService);
         eventBus.unregister(dropAttributionService);
         eventBus.unregister(clogUnlockDetector);
@@ -701,6 +705,24 @@ public class CrabmanModePlugin extends Plugin {
         int pages = clogDataService.getAllPages().size();
         int items = clogDataService.getAllClogItemIds().size();
         sendChatMessage("Trialbound clog data: " + pages + " pages, " + items + " items.");
+    }
+
+    private void onGrantCommand(ChatMessage chatMessage, String message) {
+        if (!sentByPlayer(chatMessage) || !isLoggedIntoCrabman()) {
+            return;
+        }
+        int amount = 10_000;
+        String[] parts = message.trim().split("\\s+");
+        if (parts.length > 1) {
+            try {
+                amount = Integer.parseInt(parts[1]);
+            } catch (NumberFormatException e) {
+                sendChatMessage("Usage: " + TB_GRANT_STRING + " <amount>");
+                return;
+            }
+        }
+        groupState.addAdminGrit(amount);
+        sendChatMessage("Granted " + amount + " Grit (testing). Pooled: " + groupState.getPooledGrit() + ".");
     }
 
     private void onGritCommand(ChatMessage chatMessage, String message) {

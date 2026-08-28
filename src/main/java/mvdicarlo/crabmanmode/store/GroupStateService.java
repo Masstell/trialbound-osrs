@@ -151,6 +151,15 @@ public class GroupStateService {
                 multiplierPercent, System.currentTimeMillis())), false);
     }
 
+    /** Manual grit adjustment (testing/admin). */
+    public void addAdminGrit(int delta) {
+        if (!ready) {
+            return;
+        }
+        apply(Collections.singletonList(
+                TbEventRecord.adminGrit(currentPlayer(), delta, System.currentTimeMillis())), false);
+    }
+
     /** Admin re-lock tombstone; excludes earlier unlock events for the item. */
     public void relock(int itemId) {
         if (!ready) {

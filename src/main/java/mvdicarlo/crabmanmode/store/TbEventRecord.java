@@ -89,6 +89,12 @@ public class TbEventRecord {
                 itemId, null, null, null, delta, GritReason.TRIAL_DROP, trialKey, multiplierPercent);
     }
 
+    /** Manual grit adjustment (testing/admin); no item or trial attribution. */
+    public static TbEventRecord adminGrit(String player, int delta, long now) {
+        return new TbEventRecord(UUID.randomUUID().toString(), TbEventKind.GRIT, player, now,
+                null, null, null, null, delta, GritReason.ADMIN, null, null);
+    }
+
     public static TbEventRecord relock(int itemId, String player, long now) {
         return new TbEventRecord(UUID.randomUUID().toString(), TbEventKind.RELOCK, player, now,
                 itemId, null, null, null, null, null, null, null);
