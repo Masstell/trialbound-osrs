@@ -53,16 +53,21 @@ public class GritService {
     }
 
     /**
-     * TEST HOOK - remove after keyless-chest verification. Egg potatoes from
-     * the Grubby Chest pay grit at the daily rate, proving that chest loot
+     * TEST HOOK, verified working 2026-08-28: egg potatoes from the Grubby
+     * Chest pay grit at the daily rate, proving that chest loot
      * (grubby/Larran's style) flows through real loot events with no kill
-     * credit involved anywhere.
+     * credit involved anywhere. Kept disabled for future pipeline testing -
+     * flip the flag and rebuild to re-enable.
      */
+    private static final boolean TEST_CHEST_GRIT_ENABLED = false;
     private static final int TEST_CHEST_ITEM_ID = ItemID.POTATO_EGG_TOMATO; // Egg potato
     private static final String TEST_CHEST_SOURCE = "grubby chest";
 
     @Subscribe
     public void onLootReceived(LootReceived event) {
+        if (!TEST_CHEST_GRIT_ENABLED) {
+            return;
+        }
         if (!sessionState.isActive() || !TEST_CHEST_SOURCE.equals(ClogText.normalize(event.getName()))) {
             return;
         }
