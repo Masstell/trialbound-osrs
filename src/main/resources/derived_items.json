@@ -117,6 +117,71 @@
     { "product": "Masori assembler", "requires": ["Vorkath's head"] },
 
     { "product": "Blessed dizana's quiver", "requires": ["Dizana's quiver (uncharged)"] },
-    { "product": "Dizana's max cape", "requires": ["Dizana's quiver (uncharged)"] }
+    { "product": "Dizana's max cape", "requires": ["Dizana's quiver (uncharged)"] },
+
+    { "product": "Ancient godsword", "requires": ["Ancient hilt"] },
+    { "product": "Godsword blade", "requires": ["Godsword shard 1", "Godsword shard 2", "Godsword shard 3"] },
+    { "product": "Avernic defender", "requires": ["Avernic defender hilt"] },
+    { "product": "Brimstone ring", "requires": ["Hydra's eye", "Hydra's fang", "Hydra's heart"] },
+    { "product": "Amulet of blood fury", "requires": ["Blood shard"] },
+    { "product": "Arclight", "requires": ["Ancient shard"] },
+    { "product": "Burning claws", "requires": ["Burning claw"] },
+    { "product": "Confliction gauntlets", "requires": ["Mokhaiotl cloth"] },
+    { "product": "Zamorakian hasta", "requires": ["Zamorakian spear"] },
+    { "product": "Staff of light", "requires": ["Saradomin's light", "Staff of the dead"] },
+    { "product": "Staff of balance", "requires": ["Guthixian icon", "Staff of the dead"] },
+    { "product": "Saturated heart", "requires": ["Imbued heart"] },
+    { "product": "Slayer ring (eternal)", "requires": ["Eternal gem"] },
+    { "product": "Araxyte slayer helmet", "requires": ["Black mask (10)", "Araxyte head"] },
+    { "product": "Etched araxyte fang", "requires": ["Araxyte fang"] },
+
+    { "product": "Crystal bow", "requires": ["Crystal weapon seed"] },
+    { "product": "Crystal halberd", "requires": ["Crystal weapon seed"] },
+    { "product": "Crystal shield", "requires": ["Crystal weapon seed"] },
+    { "product": "Eternal teleport crystal", "requires": ["Enhanced crystal teleport seed"] },
+
+    { "product": "Keris partisan of breaching", "requires": ["Breach of the scarab"] },
+    { "product": "Keris partisan of corruption", "requires": ["Eye of the corruptor"] },
+    { "product": "Keris partisan of the sun", "requires": ["Jewel of the sun"] },
+    { "product": "Masori mask (f)", "requires": ["Masori mask"] },
+    { "product": "Masori body (f)", "requires": ["Masori body"] },
+    { "product": "Masori chaps (f)", "requires": ["Masori chaps"] },
+    { "product": "Divine rune pouch", "requires": ["Thread of elidinis"] },
+    { "product": "Colossal pouch", "requires": ["Abyssal needle"] },
+
+    { "product": "Radiant oathplate helm", "requires": ["Oathplate helm"] },
+    { "product": "Radiant oathplate chest", "requires": ["Oathplate chest"] },
+    { "product": "Radiant oathplate legs", "requires": ["Oathplate legs"] },
+
+    { "product": "Hueycoatl hide coif", "requires": ["Hueycoatl hide"] },
+    { "product": "Hueycoatl hide body", "requires": ["Hueycoatl hide"] },
+    { "product": "Hueycoatl hide chaps", "requires": ["Hueycoatl hide"] },
+    { "product": "Hueycoatl hide vambraces", "requires": ["Hueycoatl hide"] },
+    { "product": "Twinflame staff", "requires": ["Fire element staff crown", "Ice element staff crown"] },
+
+    { "product": "Dragon platebody", "requires": ["Dragon chainbody"] },
+    { "product": "Dragon sq shield", "requires": ["Shield left half"] },
+    { "product": "Dragon kiteshield", "requires": ["Dragon metal slice"] },
+    { "product": "Dragon crossbow", "requires": ["Dragon limbs"] },
+    { "product": "Zombie axe", "requires": ["Broken zombie axe"] },
+    { "product": "Zombie helmet", "requires": ["Broken zombie helmet"] },
+    { "product": "Barronite mace", "requires": ["Barronite guard", "Barronite handle", "Barronite head"] },
+
+    { "product": "Uncut zenyte", "requires": ["Zenyte shard"] },
+    { "product": "Zenyte", "requires": ["Zenyte shard"] },
+    { "product": "Zenyte amulet", "requires": ["Zenyte shard"] },
+    { "product": "Zenyte ring", "requires": ["Zenyte shard"] },
+    { "product": "Zenyte necklace", "requires": ["Zenyte shard"] },
+    { "product": "Zenyte bracelet", "requires": ["Zenyte shard"] },
+    { "product": "Amulet of torture", "requires": ["Zenyte shard"] },
+    { "product": "Necklace of anguish", "requires": ["Zenyte shard"] },
+    { "product": "Ring of suffering", "requires": ["Zenyte shard"] },
+    { "product": "Tormented bracelet", "requires": ["Zenyte shard"] },
+
+    { "product": "Splitbark helm", "requires": ["Fine cloth"] },
+    { "product": "Splitbark body", "requires": ["Fine cloth"] },
+    { "product": "Splitbark legs", "requires": ["Fine cloth"] },
+    { "product": "Splitbark gauntlets", "requires": ["Fine cloth"] },
+    { "product": "Splitbark boots", "requires": ["Fine cloth"] }
   ]
 }

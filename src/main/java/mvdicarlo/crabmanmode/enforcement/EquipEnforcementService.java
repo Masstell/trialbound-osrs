@@ -19,13 +19,15 @@ import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.game.ItemManager;
 
 /**
- * You can hold a locked clog item, but you cannot use it: the
- * Wield/Wear/Equip options are removed from the menu, with a click-consume
- * backstop (e.g. for menus built before an unlock state change).
+ * You can hold a locked clog item, but you cannot use it: equip and consume
+ * options (wield, break, eat, invoke...) are removed from the menu, with a
+ * click-consume backstop (e.g. for menus built before an unlock state change).
  */
 @Singleton
 public class EquipEnforcementService {
-    private static final Set<String> EQUIP_OPTIONS = new HashSet<>(Arrays.asList("Wield", "Wear", "Equip"));
+    private static final Set<String> EQUIP_OPTIONS = new HashSet<>(Arrays.asList(
+            "Wield", "Wear", "Equip",
+            "Break", "Eat", "Drink", "Invoke", "Rub", "Read", "Commune", "Teleport"));
     private static final long WARN_INTERVAL_MS = 5_000;
 
     private final Client client;

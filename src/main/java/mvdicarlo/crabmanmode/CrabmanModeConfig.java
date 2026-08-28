@@ -50,7 +50,7 @@ public interface CrabmanModeConfig extends Config {
         return true;
     }
 
-    @ConfigItem(keyName = "enforceEquipBlock", name = "Block equipping locked items", position = 2, description = "Remove Wield/Wear/Equip options on collection log items you have not unlocked.", section = enforcementSection)
+    @ConfigItem(keyName = "enforceEquipBlock", name = "Block using locked items", position = 2, description = "Remove equip and consume options (wield, wear, break, eat, invoke...) on collection log items you have not unlocked.", section = enforcementSection)
     default boolean enforceEquipBlock() {
         return true;
     }

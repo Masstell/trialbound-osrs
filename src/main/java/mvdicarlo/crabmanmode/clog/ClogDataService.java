@@ -135,6 +135,26 @@ public class ClogDataService {
 
         tierRegistry.validateAgainstPages(name -> pagesByNormalizedName.containsKey(ClogText.normalize(name)));
         eventBus.post(new ClogDataLoaded());
+        exportItemList();
+    }
+
+    /** Writes id,name of every clog item for offline tooling (audit scripts). */
+    private void exportItemList() {
+        Map<Integer, String> names = displayNames;
+        Thread writer = new Thread(() -> {
+            java.io.File file = new java.io.File(
+                    new java.io.File(net.runelite.client.RuneLite.RUNELITE_DIR, "trialbound"), "clog-items.csv");
+            file.getParentFile().mkdirs();
+            try (java.io.PrintWriter out = new java.io.PrintWriter(file, "UTF-8")) {
+                for (Map.Entry<Integer, String> entry : new java.util.TreeMap<>(names).entrySet()) {
+                    out.println(entry.getKey() + "," + entry.getValue());
+                }
+            } catch (Exception e) {
+                log.warn("Failed to export clog item list", e);
+            }
+        }, "Trialbound-ClogExport");
+        writer.setDaemon(true);
+        writer.start();
     }
 
     public boolean isLoaded() {

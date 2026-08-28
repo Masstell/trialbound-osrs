@@ -1,0 +1,343 @@
+Derived-items audit vs OSRS Wiki recipe data
+Collection log items (wiki): 1712
+Recipes scanned: 7658
+Products using clog materials: 454
+Covered by derived_items.json: 97
+NOT covered (336):
+
+  3rd Age felling axe  <-  3rd Age axe, Felling axe handle
+  Abyssal whip (or)  <-  Abyssal whip
+  Adamant bolts  <-  Gryphon feather
+  Adamant dart  <-  Gryphon feather
+  Adamant felling axe  <-  Felling axe handle
+  Adamantite bar  <-  Smithing catalyst
+  Amethyst dart  <-  Gryphon feather
+  Amulet of blood fury  <-  Blood shard
+  Amulet of fury (or)  <-  Fury ornament kit
+  Amulet of the Eye  <-  Abyssal blue dye, Abyssal green dye, Abyssal red dye
+  Amulet of torture (or)  <-  Torture ornament kit
+  Ancient godsword  <-  Ancient hilt
+  Angler's trim  <-  Angler's paint
+  Anima-infused bark  <-  Fox whistle, Golden pheasant egg, Petal garland, Sturdy beehive parts
+  Anti-venom  <-  Zulrah's scales
+  Aquanite hopper  <-  Aquanite tendon
+  Araxyte slayer helmet  <-  Araxyte head
+  Araxyte slayer helmet (i)  <-  Araxyte head
+  Archer icon  <-  Archers ring
+  Archers ring (i)  <-  Archers ring
+  Arclight  <-  Ancient shard
+  Armadylean plate  <-  Armadyl chainskirt, Armadyl chestplate, Armadyl helmet
+  Armadylean trim  <-  Armadylean paint
+  Atlatl dart shaft  <-  Ent branch
+  Atlatl dart tips  <-  Broken antler
+  Avernic defender  <-  Avernic defender hilt
+  Avernic treads (et)  <-  Avernic treads, Demon tear
+  Avernic treads (max)  <-  Demon tear
+  Avernic treads (pe)  <-  Avernic treads, Demon tear
+  Avernic treads (pe)(et)  <-  Demon tear
+  Avernic treads (pr)  <-  Avernic treads, Demon tear
+  Avernic treads (pr)(et)  <-  Demon tear
+  Avernic treads (pr)(pe)  <-  Demon tear
+  Baby Mole  <-  Mole claw, Mole skin
+  Bandosian components  <-  Bandos chestplate, Bandos tassets
+  Barracuda trim  <-  Barracuda paint
+  Barronite mace  <-  Barronite guard, Barronite handle, Barronite head
+  Beehive (Construction)  <-  Sturdy beehive parts
+  Bellator icon  <-  Bellator vestige
+  Belle's folly  <-  Belle's folly (tarnished)
+  Beret mask  <-  Black beret, Mime mask
+  Berserker icon  <-  Berserker ring
+  Berserker necklace (or)  <-  Berserker necklace ornament kit
+  Berserker ring (i)  <-  Berserker ring
+  Black coffin  <-  Black locks
+  Black felling axe  <-  Felling axe handle
+  Blue logs  <-  Blue firelighter
+  Blurite bolts  <-  Gryphon feather
+  Bone fragments  <-  Bottom of sceptre, Left skull half, Right skull half, Top of sceptre
+  Brimstone ring  <-  Hydra's eye, Hydra's fang, Hydra's heart
+  Broad bolts  <-  Gryphon feather
+  Broken crab claw  <-  Fresh crab claw
+  Broken crab shell  <-  Fresh crab shell
+  Bronze bolts  <-  Gryphon feather
+  Bronze coffin  <-  Bronze locks
+  Bronze dart  <-  Gryphon feather
+  Bronze felling axe  <-  Felling axe handle
+  Burning claws  <-  Burning claw
+  Cadantine blood potion (unf)  <-  Vial of blood
+  Camphor blowpipe  <-  Squid beak
+  Cap and goggles  <-  Gnome goggles
+  Catalytic tiara  <-  Catalytic talisman
+  Cavalier mask  <-  Black cavalier, Highwayman mask
+  Clothes pouch  <-  Clothes pouch blueprint
+  Colossal pouch  <-  Abyssal needle
+  Confliction gauntlets  <-  Demon tear, Mokhaiotl cloth
+  Cotton trawling net  <-  Ray barbs
+  Crab claw  <-  Fresh crab claw
+  Crab helmet  <-  Fresh crab shell
+  Crabclaw hook  <-  Pirate's hook
+  Crystal acorn  <-  Crystal armour seed, Crystal tool seed, Crystal weapon seed
+  Crystal bow  <-  Crystal weapon seed
+  Crystal felling axe  <-  Crystal tool seed, Felling axe handle
+  Crystal glider's flag  <-  Gwyna's fabric roll
+  Crystal halberd  <-  Crystal weapon seed
+  Crystal shield  <-  Crystal weapon seed
+  Cw armour 1  <-  Decorative armour (red platebody), Decorative helm (red), Decorative shield (red)
+  Cw armour 2  <-  Decorative armour (white platebody), Decorative helm (white), Decorative shield (white)
+  Dark bow  <-  Blue dark bow paint, Green dark bow paint, White dark bow paint, Yellow dark bow paint
+  Dark flippers  <-  Dark claw, Flippers
+  Dark infinity bottoms  <-  Dark infinity colour kit, Infinity bottoms
+  Dark infinity hat  <-  Dark infinity colour kit, Infinity hat
+  Dark infinity top  <-  Dark infinity colour kit, Infinity top
+  Dinh's blazing bulwark  <-  Dinh's bulwark
+  Divine rune pouch  <-  Thread of Elidinis
+  Double eye patch  <-  Left eye patch
+  Dragon 2h sword (cr)  <-  Dragon 2h sword
+  Dragon axe (or)  <-  Dragon axe
+  Dragon bolts  <-  Gryphon feather
+  Dragon boots (cr)  <-  Dragon boots
+  Dragon boots (g)  <-  Dragon boots, Dragon boots ornament kit
+  Dragon cannon  <-  Dragon cannon barrel, Dragon metal sheet, Dragon nails
+  Dragon chainbody (cr)  <-  Dragon chainbody
+  Dragon chainbody (g)  <-  Dragon chainbody, Dragon chainbody ornament kit
+  Dragon claws (cr)  <-  Dragon claws
+  Dragon crossbow (u)  <-  Dragon limbs
+  Dragon dart  <-  Gryphon feather
+  Dragon defender (t)  <-  Dragon defender ornament kit
+  Dragon felling axe  <-  Dragon axe, Felling axe handle
+  Dragon full helm (g)  <-  Dragon full helm, Dragon full helm ornament kit
+  Dragon harpoon (or)  <-  Dragon harpoon
+  Dragon hasta  <-  Broken dragon hasta
+  Dragon helm  <-  Dragon metal sheet
+  Dragon hunter crossbow (b)  <-  Dragon hunter crossbow, Kbd heads
+  Dragon hunter crossbow (t)  <-  Dragon hunter crossbow, Vorkath's head
+  Dragon keel parts  <-  Dragon metal sheet
+  Dragon kiteshield  <-  Dragon metal slice
+  Dragon kiteshield (g)  <-  Dragon kiteshield ornament kit
+  Dragon pickaxe (or)  <-  Dragon pickaxe, Zalcano shard
+  Dragon pickaxe (or) (Trailblazer)  <-  Dragon pickaxe
+  Dragon pickaxe (upgraded)  <-  Dragon pickaxe, Dragon pickaxe upgrade kit
+  Dragon platebody  <-  Dragon chainbody, Dragon metal lump
+  Dragon platebody (g)  <-  Dragon platebody ornament kit
+  Dragon platelegs (g)  <-  Dragon legs/skirt ornament kit
+  Dragon plateskirt (g)  <-  Dragon legs/skirt ornament kit
+  Dragon salvaging hook  <-  Broken dragon hook, Dragon metal sheet, Dragon nails
+  Dragon scimitar (or)  <-  Dragon scimitar ornament kit
+  Dragon sq shield  <-  Shield left half
+  Dragon sq shield (g)  <-  Dragon sq shield ornament kit
+  Dragon sword (cr)  <-  Dragon sword
+  Dragon warhammer (cr)  <-  Dragon warhammer
+  Echo boots  <-  Echo crystal
+  Echo virtus mask  <-  Virtus mask
+  Echo virtus robe bottom  <-  Virtus robe bottom
+  Echo virtus robe top  <-  Virtus robe top
+  Elder chaos hood (or)  <-  Elder chaos hood
+  Elder chaos robe (or)  <-  Elder chaos robe
+  Elder chaos top (or)  <-  Elder chaos top
+  Elder maul (or)  <-  Elder maul
+  Elemental metal  <-  Smithing catalyst
+  Elidinis' ward (f)  <-  Arcane sigil, Elidinis' ward
+  Elidinis' ward (or)  <-  Menaphite ornament kit
+  Ensouled dragon head  <-  Kbd heads
+  Etched araxyte fang  <-  Araxyte fang
+  Etched elder venator fang  <-  Elder venator fang
+  Eternal teleport crystal  <-  Enhanced crystal teleport seed
+  Extended anti-venom+  <-  Araxyte venom sac
+  Fathom pearl  <-  Dragon metal sheet, Dragon nails, Echo pearl
+  Fish sack barrel  <-  Fish sack
+  Flighted ogre arrow  <-  Gryphon feather
+  Forgotten brew  <-  Ancient essence
+  Frozen abyssal whip  <-  Abyssal whip, Frozen whip mix
+  Gale catcher  <-  Swift albatross feather
+  Gem sack  <-  Gem bag, Immaculate mole skin
+  Giant Squirrel  <-  Calcified acorn, Dark acorn
+  Gnomish firelighter  <-  Blue firelighter, Green firelighter, Purple firelighter, Red firelighter, White firelighter
+  Godsword blade  <-  Godsword shard 1, Godsword shard 2, Godsword shard 3
+  Godsword shards 1 & 2  <-  Godsword shard 1, Godsword shard 2
+  Godsword shards 1 & 3  <-  Godsword shard 1, Godsword shard 3
+  Godsword shards 2 & 3  <-  Godsword shard 2, Godsword shard 3
+  Gold coffin  <-  Gold locks
+  Golden prospector boots  <-  Star fragment
+  Golden prospector helmet  <-  Star fragment
+  Golden prospector jacket  <-  Star fragment
+  Golden prospector legs  <-  Star fragment
+  Graceful boots (Hallowed)  <-  Dark dye
+  Graceful cape (Hallowed)  <-  Dark dye
+  Graceful gloves (Hallowed)  <-  Dark dye
+  Graceful hood (Hallowed)  <-  Dark dye
+  Graceful legs (Hallowed)  <-  Dark dye
+  Graceful top (Hallowed)  <-  Dark dye
+  Granite cannonball  <-  Granite dust
+  Granite maul  <-  Granite clamp
+  Granite maul (ornate handle)  <-  Granite clamp, Ornate maul handle
+  Granite ring (i)  <-  Granite ring
+  Greater teleportation focus (facility)  <-  Bottled storm
+  Green logs  <-  Green firelighter
+  Greenman carving  <-  Ent branch
+  Greenman statue  <-  Ent branch
+  Guthixian trim  <-  Guthixian paint
+  Hat eyepatch  <-  Pirate's hat
+  Hat of the Eye  <-  Abyssal blue dye, Abyssal green dye, Abyssal red dye
+  Headless arrow  <-  Gryphon feather
+  Headless atlatl dart  <-  Gryphon feather
+  Hemp trawling net  <-  Ray barbs
+  Holy ghrazi rapier  <-  Ghrazi rapier, Holy ornament kit
+  Holy moleys  <-  Holy sandals, Mole slippers
+  Holy sanguinesti staff  <-  Holy ornament kit
+  Holy scythe of vitur  <-  Holy ornament kit
+  Hueycoatl hide body  <-  Hueycoatl hide
+  Hueycoatl hide chaps  <-  Hueycoatl hide
+  Hueycoatl hide coif  <-  Hueycoatl hide
+  Hueycoatl hide vambraces  <-  Hueycoatl hide
+  Incomplete heavy ballista  <-  Ballista limbs, Heavy frame
+  Incomplete light ballista  <-  Ballista limbs, Light frame
+  Infernal blend  <-  Oathplate shards
+  Inky trim  <-  Inky paint
+  Iron bolts  <-  Gryphon feather
+  Iron dart  <-  Gryphon feather
+  Iron felling axe  <-  Felling axe handle
+  Ironwood blowpipe  <-  Squid beak
+  Jug of sunfire wine  <-  Sunfire splinters
+  Keris partisan of amascut  <-  Jewel of Amascut
+  Keris partisan of breaching  <-  Breach of the Scarab
+  Keris partisan of corruption  <-  Eye of the Corruptor
+  Keris partisan of the sun  <-  Jewel of the Sun
+  Lava battlestaff (or)  <-  Lava staff upgrade kit
+  Light infinity bottoms  <-  Infinity bottoms, Light infinity colour kit
+  Light infinity hat  <-  Infinity hat, Light infinity colour kit
+  Light infinity top  <-  Infinity top, Light infinity colour kit
+  Lost bag  <-  Abyssal blue dye, Abyssal green dye, Abyssal red dye
+  Lovakite bar  <-  Smithing catalyst
+  Magus icon  <-  Magus vestige
+  Masori assembler max cape  <-  Masori crafting kit
+  Masori assembler max hood  <-  Masori crafting kit
+  Masori body (f)  <-  Masori body
+  Masori chaps (f)  <-  Masori chaps
+  Masori mask (f)  <-  Masori mask
+  Merchant's trim  <-  Merchant's paint
+  Mithril bar  <-  Smithing catalyst
+  Mithril bolts  <-  Gryphon feather
+  Mithril dart  <-  Gryphon feather
+  Mithril felling axe  <-  Felling axe handle
+  Molch pearl  <-  Golden tench
+  Mystic dust staff  <-  Dust battlestaff
+  Mystic lava staff (or)  <-  Lava staff upgrade kit
+  Mystic mist staff  <-  Mist battlestaff
+  Mystic mud staff  <-  Mud battlestaff
+  Mystic smoke staff  <-  Smoke battlestaff
+  Mystic steam staff  <-  Steam battlestaff
+  Mystic steam staff (or)  <-  Steam staff upgrade kit
+  Narwhal horn knife  <-  Narwhal horn
+  Necklace of anguish (or)  <-  Anguish ornament kit
+  Nihil dust  <-  Nihil shard
+  Obelisk (Construction)  <-  Ancient crystal
+  Obsidian decorative bench  <-  Onyx
+  Obsidian fence  <-  Toktz-mej-tal, Toktz-xil-ul, Tzhaar-ket-om
+  Occult necklace (or)  <-  Occult necklace, Occult ornament kit
+  Oily pearl fishing rod  <-  Pearl fishing rod
+  Onyx amulet (u)  <-  Onyx
+  Onyx bolt tips  <-  Onyx
+  Onyx bracelet  <-  Onyx
+  Onyx necklace  <-  Onyx
+  Onyx ring  <-  Onyx
+  Osmumten's fang (or)  <-  Cursed phalanx, Osmumten's fang
+  Partyhat & specs  <-  Sagacious spectacles
+  Pirate hat & patch  <-  Big pirate hat
+  Purple logs  <-  Purple firelighter
+  Radiant oathplate chest  <-  Oathplate chest
+  Radiant oathplate helm  <-  Oathplate helm
+  Radiant oathplate legs  <-  Oathplate legs
+  Red logs  <-  Red firelighter
+  Rift guardian  <-  Guardian's eye
+  Ring of the gods (i)  <-  Ring of the gods
+  Robe bottoms of the Eye  <-  Abyssal blue dye, Abyssal green dye, Abyssal red dye
+  Robe top of the Eye  <-  Abyssal blue dye, Abyssal green dye, Abyssal red dye
+  Rosewood blowpipe  <-  Squid beak
+  Rosewood cargo hold  <-  Dragon nails
+  Rosewood hull  <-  Dragon nails
+  Rosewood mast and cotton sails  <-  Dragon nails
+  Rosewood repair kit  <-  Dragon nails
+  Rune dart  <-  Gryphon feather
+  Rune defender (t)  <-  Rune defender ornament kit
+  Rune felling axe  <-  Felling axe handle
+  Rune scimitar (guthix)  <-  Rune scimitar ornament kit (Guthix)
+  Rune scimitar (saradomin)  <-  Rune scimitar ornament kit (Saradomin)
+  Rune scimitar (zamorak)  <-  Rune scimitar ornament kit (Zamorak)
+  Runed sceptre  <-  Bottom of sceptre, Top of sceptre
+  Runite bar  <-  Smithing catalyst
+  Runite bolts  <-  Gryphon feather
+  Salvor's trim  <-  Salvor's paint
+  Sandy trim  <-  Sandy paint
+  Sanguine scythe of vitur  <-  Sanguine ornament kit
+  Saradominist trim  <-  Saradominist paint
+  Saturated heart  <-  Ancient essence, Imbued heart
+  Searing page  <-  Burnt page
+  Seeking headless arrow  <-  Gryphon feather
+  Seers icon  <-  Seers ring
+  Seers ring (i)  <-  Seers ring
+  Shark trim  <-  Shark paint
+  Silklined herb sack  <-  Pristine spider silk
+  Silver bolts  <-  Gryphon feather
+  Silver coffin  <-  Silver locks
+  Slayer ring (eternal)  <-  Eternal gem
+  Smiths gloves (i)  <-  Smiths gloves
+  Splitbark body  <-  Fine cloth
+  Splitbark boots  <-  Fine cloth
+  Splitbark gauntlets  <-  Fine cloth
+  Splitbark helm  <-  Fine cloth
+  Splitbark legs  <-  Fine cloth
+  Staff of Balance  <-  Guthixian icon, Staff of the Dead
+  Staff of Light  <-  Saradomin's light, Staff of the Dead
+  Steam battlestaff (or)  <-  Steam battlestaff, Steam staff upgrade kit
+  Steel bar  <-  Smithing catalyst
+  Steel bolts  <-  Gryphon feather
+  Steel coffin  <-  Steel locks
+  Steel dart  <-  Gryphon feather
+  Steel felling axe  <-  Felling axe handle
+  Storm chaser's flag  <-  Ralph's fabric roll
+  Strange skull  <-  Left skull half, Right skull half
+  Stuffed abyssal head  <-  Abyssal head
+  Stuffed basilisk head  <-  Basilisk head
+  Stuffed big bass  <-  Big bass
+  Stuffed big harpoonfish  <-  Big harpoonfish
+  Stuffed big shark  <-  Big shark
+  Stuffed big swordfish  <-  Big swordfish
+  Stuffed cockatrice head  <-  Cockatrice head
+  Stuffed crawling hand  <-  Crawling hand (item)
+  Stuffed giant blue krill  <-  Giant blue krill
+  Stuffed golden haddock  <-  Golden haddock
+  Stuffed huge halibut  <-  Huge halibut
+  Stuffed hydra heads  <-  Alchemical hydra heads
+  Stuffed kbd heads  <-  Kbd heads
+  Stuffed kq head  <-  Kq head
+  Stuffed kurask head  <-  Kurask head
+  Stuffed orangefin  <-  Orangefin
+  Stuffed purplefin  <-  Purplefin
+  Stuffed swift marlin  <-  Swift marlin
+  Sturdy harness  <-  Log brace
+  Sunfire rune  <-  Sunfire splinters
+  Swamp cruiser's flag  <-  Gurtob's fabric roll
+  Top hat & monocle  <-  Monocle, Top hat
+  Tormented bracelet (or)  <-  Tormented ornament kit
+  Treasonous ring (i)  <-  Treasonous ring
+  Trident of the Seas (e)  <-  Kraken tentacle
+  Twinflame staff  <-  Fire element staff crown, Ice element staff crown
+  Twisted ancestral hat  <-  Ancestral hat, Twisted ancestral colour kit
+  Twisted ancestral robe bottom  <-  Ancestral robe bottom, Twisted ancestral colour kit
+  Twisted ancestral robe top  <-  Ancestral robe top, Twisted ancestral colour kit
+  Tyrannical ring (i)  <-  Tyrannical ring
+  Tzhaar-ket-om (t)  <-  Tzhaar-ket-om, Tzhaar-ket-om ornament kit
+  Ultor icon  <-  Ultor vestige
+  Uncut zenyte  <-  Onyx, Zenyte shard
+  Unstrung heavy ballista  <-  Ballista spring
+  Unstrung light ballista  <-  Ballista spring
+  Venator icon  <-  Venator vestige
+  Volcanic abyssal whip  <-  Abyssal whip, Volcanic whip mix
+  Volcanic theme  <-  Onyx
+  Vorkath's stuffed head  <-  Vorkath's head
+  Warrior icon  <-  Warrior ring
+  Warrior ring (i)  <-  Warrior ring
+  White logs  <-  White firelighter
+  Zamorakian hasta  <-  Zamorakian spear
+  Zamorakian trim  <-  Zamorakian paint
+  Zombie axe  <-  Broken zombie axe
+  Zombie helmet  <-  Broken zombie helmet
