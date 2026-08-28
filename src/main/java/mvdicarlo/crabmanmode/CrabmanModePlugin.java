@@ -105,6 +105,7 @@ public class CrabmanModePlugin extends Plugin {
     private static final String GBM_UNLOCKS_STRING = "!gbmunlocks";
     private static final String GBM_COUNT_STRING = "!gbmcount";
     private static final String GBM_RECENT_STRING = "!gbmrecent";
+    private static final String TB_CLOG_DEBUG_STRING = "!tbclog";
 
     final int COLLECTION_LOG_GROUP_ID = 621;
     final int COMBAT_ACHIEVEMENT_BUTTON = 40697877;
@@ -160,6 +161,9 @@ public class CrabmanModePlugin extends Plugin {
 
     @Inject
     private SessionState sessionState;
+
+    @Inject
+    private mvdicarlo.crabmanmode.clog.ClogDataService clogDataService;
 
     @Inject
     private CrabmanModeOverlay CrabmanModeOverlay;
@@ -224,6 +228,9 @@ public class CrabmanModePlugin extends Plugin {
         chatCommandManager.registerCommand(GBM_UNLOCKS_STRING, this::OnUnlocksCountCommand);
         chatCommandManager.registerCommand(GBM_COUNT_STRING, this::OnUnlocksCountCommand);
         chatCommandManager.registerCommand(GBM_RECENT_STRING, this::OnRecentUnlocksCommand);
+        chatCommandManager.registerCommand(TB_CLOG_DEBUG_STRING, this::onClogDebugCommand);
+
+        clogDataService.ensureLoaded();
 
         clientThread.invoke(() -> {
             if (client.getGameState() == GameState.LOGGED_IN) {
@@ -248,6 +255,7 @@ public class CrabmanModePlugin extends Plugin {
         chatCommandManager.unregisterCommand(GBM_UNLOCKS_STRING);
         chatCommandManager.unregisterCommand(GBM_COUNT_STRING);
         chatCommandManager.unregisterCommand(GBM_RECENT_STRING);
+        chatCommandManager.unregisterCommand(TB_CLOG_DEBUG_STRING);
         clientToolbar.removeNavigation(navButton);
         clientThread.invoke(() -> {
             // Cleanup is not required after having played on a seasonal world.
@@ -266,6 +274,7 @@ public class CrabmanModePlugin extends Plugin {
 
             onSeasonalWorld = isSeasonalWorld(client.getWorld());
             sessionState.setSeasonalWorld(onSeasonalWorld);
+            clogDataService.ensureLoaded();
         }
         if (e.getGameState() == GameState.LOGIN_SCREEN) {
             databaseRepo.close();
@@ -785,6 +794,19 @@ public class CrabmanModePlugin extends Plugin {
 
         int world = player.getWorld();
         return !isSeasonalWorld(world);
+    }
+
+    private void onClogDebugCommand(ChatMessage chatMessage, String message) {
+        if (!sentByPlayer(chatMessage)) {
+            return;
+        }
+        if (!clogDataService.isLoaded()) {
+            sendChatMessage("Collection log data is not loaded yet.");
+            return;
+        }
+        int pages = clogDataService.getAllPages().size();
+        int items = clogDataService.getAllClogItemIds().size();
+        sendChatMessage("Trialbound clog data: " + pages + " pages, " + items + " items.");
     }
 
     private void OnUnlocksCountCommand(ChatMessage chatMessage, String message) {
