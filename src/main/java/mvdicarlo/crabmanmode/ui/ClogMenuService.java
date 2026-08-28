@@ -80,27 +80,23 @@ public class ClogMenuService {
     }
 
     /**
-     * Fallback that survives other menu-rewriting plugins: clicking the
-     * default "Check" op on a locked clog item opens the purchase dialog.
+     * Diagnostic: whenever a right-click menu opens while the collection log
+     * is up, log every entry so menu-structure issues are visible in the log.
      */
-    @Subscribe
-    public void onMenuOptionClicked(net.runelite.api.events.MenuOptionClicked event) {
-        if (!sessionState.isActive() || !clogData.isLoaded()
-                || client.getVarbitValue(VarbitID.COLLECTION_POH_HOST_BOOK_OPEN) == 1) {
+    @Subscribe(priority = -1)
+    public void onMenuOpenedDiagnostic(MenuOpened event) {
+        if (client.getWidget(InterfaceID.Collection.ITEMS_CONTENTS) == null) {
             return;
         }
-        if (!"Check".equals(event.getMenuOption())) {
-            return;
+        StringBuilder sb = new StringBuilder("Clog menu entries:");
+        for (MenuEntry entry : event.getMenuEntries()) {
+            Widget widget = entry.getWidget();
+            sb.append(" [").append(entry.getOption())
+                    .append(" widget=").append(widget == null ? "none" : widget.getId())
+                    .append(" item=").append(widget == null ? -1 : widget.getItemId())
+                    .append(" type=").append(entry.getType()).append(']');
         }
-        int itemId = lockedClogItemFor(event.getMenuEntry().getWidget());
-        if (itemId <= 0) {
-            return;
-        }
-        event.consume();
-        String name = clogData.getItemName(itemId);
-        int price = gritService.getPrice(itemId);
-        log.info("Check-click purchase prompt for {} ({})", name, itemId);
-        confirmPurchase(itemId, name, price);
+        log.info("{}", sb);
     }
 
     /** The locked clog item a menu widget points at, or -1. */

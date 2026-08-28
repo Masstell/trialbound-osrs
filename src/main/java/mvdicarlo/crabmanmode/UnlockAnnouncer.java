@@ -44,21 +44,30 @@ public class UnlockAnnouncer {
     }
 
     public void announce(TbEventRecord unlock) {
-        sendWithItemIcon(unlock.getItemId(), message(unlock));
+        String prefix;
+        String suffix;
+        if (unlock.getSource() == UnlockSource.PURCHASE) {
+            prefix = unlock.getPlayer() + " has purchased an unlock: ";
+            suffix = unlock.getItemName() + " (" + unlock.getCost() + " Grit).";
+        } else {
+            prefix = unlock.getPlayer() + " has unlocked a new item: ";
+            suffix = unlock.getItemName() + ".";
+        }
+        sendWithItemIcon(unlock.getItemId(), prefix, suffix);
     }
 
     public void announceRelock(int itemId, String itemName) {
-        sendWithItemIcon(itemId, "Re-locked: " + itemName + ".");
+        sendWithItemIcon(itemId, "Re-locked: ", itemName + ".");
     }
 
     /**
-     * The icon index is only assigned by ChatIconManager's refresh, which it
-     * queues on the client thread - so the send is queued behind it, or the
-     * first message per item would always come out iconless. The message must
-     * never depend on the sprite though: if the image has not loaded within
-     * 3 s the announcement goes out without an icon.
+     * The icon renders inline, just before the item name. Its index is only
+     * assigned by ChatIconManager's refresh, which it queues on the client
+     * thread - so the send is queued behind it, or the first message per item
+     * would come out iconless. The message must never depend on the sprite
+     * though: if the image has not loaded within 3 s it goes out without one.
      */
-    private void sendWithItemIcon(int itemId, String message) {
+    private void sendWithItemIcon(int itemId, String prefix, String suffix) {
         AtomicBoolean sent = new AtomicBoolean();
         AsyncBufferedImage image = itemManager.getImage(itemId);
         image.onLoaded(() -> {
@@ -66,22 +75,14 @@ public class UnlockAnnouncer {
                     .registerChatIcon(ImageUtil.resizeImage(image, ICON_WIDTH, ICON_HEIGHT)));
             clientThread.invokeLater(() -> {
                 if (sent.compareAndSet(false, true)) {
-                    chat.send(chatIconManager.chatIconIndex(iconId), message);
+                    chat.send(prefix, chatIconManager.chatIconIndex(iconId), suffix);
                 }
             });
         });
         CompletableFuture.delayedExecutor(3, TimeUnit.SECONDS).execute(() -> {
             if (sent.compareAndSet(false, true)) {
-                chat.send(message);
+                chat.send(prefix + suffix);
             }
         });
-    }
-
-    private static String message(TbEventRecord unlock) {
-        if (unlock.getSource() == UnlockSource.PURCHASE) {
-            return unlock.getPlayer() + " has purchased an unlock: " + unlock.getItemName()
-                    + " (" + unlock.getCost() + " Grit).";
-        }
-        return unlock.getPlayer() + " has unlocked a new item: " + unlock.getItemName() + ".";
     }
 }

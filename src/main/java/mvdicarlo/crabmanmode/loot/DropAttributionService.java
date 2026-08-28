@@ -152,6 +152,17 @@ public class DropAttributionService {
         processLoot(event.getName(), canonicalizeStacks(event.getItems()));
     }
 
+    /**
+     * Acquisitions detected outside loot events (game shop purchases). Runs
+     * the standard pipeline: clog filter, dedupe, unlock; no page = no grit.
+     */
+    public void onExternalAcquisition(String sourceName, Collection<Integer> canonicalItemIds) {
+        if (!ready()) {
+            return;
+        }
+        processLoot(sourceName, canonicalItemIds);
+    }
+
     /** Name-only detection from the clog chat message or popup. */
     public void onClogNotification(String itemName) {
         if (!ready()) {
