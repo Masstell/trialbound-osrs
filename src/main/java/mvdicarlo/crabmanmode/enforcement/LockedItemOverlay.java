@@ -18,13 +18,18 @@ import net.runelite.client.util.ImageUtil;
 
 /**
  * Dims locked collection log items wherever they appear in your possession
- * (inventory, bank, equipment): the item sprite is redrawn as a darkened
- * grayscale copy - GE-search-style dimming instead of a box overlay.
+ * (inventory, bank, equipment): the item sprite is redrawn as a lightly
+ * grayed, red-tinted copy - GE-search-style dimming instead of a box overlay.
  */
 @Singleton
 public class LockedItemOverlay extends WidgetItemOverlay {
     /** Brightness of the dimmed copy (0 = black, 1 = unchanged). */
-    private static final float DIM_LUMINANCE = 0.45f;
+    private static final float DIM_LUMINANCE = 0.6f;
+    /** Strength of the red blend applied on top of the dimmed copy (0 = none, 1 = full red). */
+    private static final float RED_TINT_STRENGTH = 0.25f;
+    private static final int TINT_R = 255;
+    private static final int TINT_G = 40;
+    private static final int TINT_B = 40;
 
     private final CrabmanModeConfig config;
     private final LockedItemHelper locked;
@@ -72,7 +77,34 @@ public class LockedItemOverlay extends WidgetItemOverlay {
         }
         AsyncBufferedImage image = itemManager.getImage(itemId);
         image.onLoaded(() -> dimmedCache.put(itemId,
-                ImageUtil.luminanceScale(ImageUtil.grayscaleImage(image), DIM_LUMINANCE)));
+                redTint(ImageUtil.luminanceScale(ImageUtil.grayscaleImage(image), DIM_LUMINANCE))));
         return dimmedCache.get(itemId);
+    }
+
+    /**
+     * Blends each opaque pixel toward a red hue, leaving alpha untouched so
+     * the sprite's silhouette and transparency are preserved.
+     */
+    private static BufferedImage redTint(BufferedImage src) {
+        int width = src.getWidth();
+        int height = src.getHeight();
+        BufferedImage tinted = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int argb = src.getRGB(x, y);
+                int alpha = (argb >>> 24) & 0xFF;
+                if (alpha == 0) {
+                    continue;
+                }
+                int r = (argb >> 16) & 0xFF;
+                int g = (argb >> 8) & 0xFF;
+                int b = argb & 0xFF;
+                r = Math.round(r + (TINT_R - r) * RED_TINT_STRENGTH);
+                g = Math.round(g + (TINT_G - g) * RED_TINT_STRENGTH);
+                b = Math.round(b + (TINT_B - b) * RED_TINT_STRENGTH);
+                tinted.setRGB(x, y, (alpha << 24) | (r << 16) | (g << 8) | b);
+            }
+        }
+        return tinted;
     }
 }

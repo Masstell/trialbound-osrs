@@ -45,11 +45,12 @@ public class ClogHighlightOverlay extends Overlay {
     private final GroupStateService groupState;
     private final GritService gritService;
     private final TooltipManager tooltipManager;
+    private final mvdicarlo.crabmanmode.enforcement.LockedItemHelper locked;
 
     @Inject
     public ClogHighlightOverlay(Client client, ItemManager itemManager, CrabmanModeConfig config,
             SessionState sessionState, ClogDataService clogData, GroupStateService groupState, GritService gritService,
-            TooltipManager tooltipManager) {
+            TooltipManager tooltipManager, mvdicarlo.crabmanmode.enforcement.LockedItemHelper locked) {
         this.client = client;
         this.itemManager = itemManager;
         this.config = config;
@@ -58,6 +59,7 @@ public class ClogHighlightOverlay extends Overlay {
         this.groupState = groupState;
         this.gritService = gritService;
         this.tooltipManager = tooltipManager;
+        this.locked = locked;
         setPosition(OverlayPosition.DYNAMIC);
         setLayer(OverlayLayer.ABOVE_WIDGETS);
     }
@@ -92,6 +94,16 @@ public class ClogHighlightOverlay extends Overlay {
             }
             Rectangle bounds = child.getBounds();
             TbEventRecord unlock = unlocked.get(itemId);
+            if (unlock == null) {
+                // The unlock event may live on another charge state of the
+                // same family (Uncharged trident vs the (full) clog entry).
+                for (int member : locked.clogGroupMembers(itemId)) {
+                    unlock = unlocked.get(member);
+                    if (unlock != null) {
+                        break;
+                    }
+                }
+            }
             // Outline the item sprite itself (quantity 1 so stack digits are
             // not outlined too): green = group-unlocked, red = locked.
             Color outline = unlock != null ? UNLOCKED_OUTLINE : LOCKED_OUTLINE;

@@ -3,6 +3,7 @@ package mvdicarlo.crabmanmode.enforcement;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import mvdicarlo.crabmanmode.SessionState;
@@ -39,41 +40,81 @@ public class LockedItemHelper {
     }
 
     /**
-     * The id lock state is judged by: the canonical item itself if it is a
-     * clog item, else its variation base (so ornament-kit and degraded
-     * variants - e.g. Twisted ancestral - inherit the base item's lock).
+     * All clog item ids in the item's variation group, the item itself
+     * included. Charge-state families can carry several clog identities
+     * (Trident of the seas (full) 11905 AND Uncharged trident 11908), and
+     * the clog identity is not always the group's base id (Pharaoh's
+     * sceptre's group base is a legacy pre-rework id; the clog item is the
+     * mid-group "(uncharged)" form) - so the whole group is scanned, never
+     * just the base.
      */
-    public int lockCheckId(int itemId) {
+    public List<Integer> clogGroupMembers(int itemId) {
         int canonical = itemManager.canonicalize(itemId);
+        List<Integer> members = new ArrayList<>();
         if (clogData.isClogItem(canonical)) {
-            return canonical;
+            members.add(canonical);
         }
-        int base = ItemVariationMapping.map(canonical);
-        if (base != canonical && clogData.isClogItem(base)) {
-            return base;
+        for (int variant : ItemVariationMapping.getVariations(ItemVariationMapping.map(canonical))) {
+            if (variant != canonical && clogData.isClogItem(variant)) {
+                members.add(variant);
+            }
         }
-        return canonical;
+        return members;
     }
 
     /**
-     * True when the item is locked: it (or its variation base, or the clog
-     * item its name derives from - ornament kits, trouver parchment) is a
-     * clog item the group has not unlocked, or it is crafted from clog items
-     * of which any is still locked (blowpipe from Tanzanite fang etc.).
-     * Client thread only (reads item names).
+     * A clog identity counts as unlocked when ANY clog member of its
+     * variation family is - an unlock event lands on one specific id, but
+     * charging/degrading swaps which id you hold.
      */
-    public boolean isLocked(int itemId) {
-        int id = lockCheckId(itemId);
-        if (clogData.isClogItem(id)) {
-            return !groupState.isUnlocked(id);
-        }
-        for (int required : derived.getRequirements(id)) {
-            if (!groupState.isUnlocked(required)) {
+    private boolean clogUnlocked(int clogItemId) {
+        for (int member : clogGroupMembers(clogItemId)) {
+            if (groupState.isUnlocked(member)) {
                 return true;
             }
         }
-        int named = clogItemByStrippedName(id);
-        return named > 0 && !groupState.isUnlocked(named);
+        return false;
+    }
+
+    /**
+     * True when the item is locked: its variation family holds a clog
+     * identity the group has not unlocked (any unlocked member frees the
+     * whole family), the clog item its name derives from is locked (ornament
+     * kits, trouver parchment), or it is crafted from clog items of which
+     * any is still locked (blowpipe from Tanzanite fang etc.).
+     * Client thread only (reads item names).
+     *
+     * <p>Derived requirements are checked against the item's own canonical id
+     * first, before the variation-group scan. Some crafted items (e.g. toxic
+     * trident/staff pairs) share a RuneLite variation group with just one of
+     * their required ingredients - the group scan alone would silently ignore
+     * the other required ingredient (e.g. Magic fang) and under-lock the
+     * item. Requirement checks are themselves family-aware via
+     * {@link #clogUnlocked}.
+     */
+    public boolean isLocked(int itemId) {
+        int canonical = itemManager.canonicalize(itemId);
+        List<Integer> requirements = derived.getRequirements(canonical);
+        if (!requirements.isEmpty()) {
+            for (int required : requirements) {
+                if (!clogUnlocked(required)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        List<Integer> clogMembers = clogGroupMembers(canonical);
+        if (!clogMembers.isEmpty()) {
+            for (int member : clogMembers) {
+                if (groupState.isUnlocked(member)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        int named = clogItemByStrippedName(canonical);
+        return named > 0 && !clogUnlocked(named);
     }
 
     /**

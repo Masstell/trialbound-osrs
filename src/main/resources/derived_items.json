@@ -53,18 +53,27 @@
     {
       "product": "Amulet of blood fury",
       "requires": [
-        "Blood shard"
+        "Blood shard",
+        "Onyx"
+      ]
+    },
+    {
+      "product": "Amulet of fury",
+      "requires": [
+        "Onyx"
       ]
     },
     {
       "product": "Amulet of fury (or)",
       "requires": [
-        "Fury ornament kit"
+        "Fury ornament kit",
+        "Onyx"
       ]
     },
     {
       "product": "Amulet of rancour",
       "requires": [
+        "Araxyte fang",
         "Zenyte shard"
       ]
     },
@@ -131,7 +140,9 @@
     {
       "product": "Arcane spirit shield",
       "requires": [
-        "Arcane sigil"
+        "Arcane sigil",
+        "Holy elixir",
+        "Spirit shield"
       ]
     },
     {
@@ -149,14 +160,20 @@
     {
       "product": "Armadyl godsword",
       "requires": [
-        "Armadyl hilt"
+        "Armadyl hilt",
+        "Godsword shard 1",
+        "Godsword shard 2",
+        "Godsword shard 3"
       ]
     },
     {
       "product": "Armadyl godsword (or)",
       "requires": [
         "Armadyl godsword ornament kit",
-        "Armadyl hilt"
+        "Armadyl hilt",
+        "Godsword shard 1",
+        "Godsword shard 2",
+        "Godsword shard 3"
       ]
     },
     {
@@ -196,6 +213,7 @@
     {
       "product": "Avernic treads (max)",
       "requires": [
+        "Avernic treads",
         "Demon tear",
         "Dragon boots",
         "Eternal crystal",
@@ -259,14 +277,20 @@
     {
       "product": "Bandos godsword",
       "requires": [
-        "Bandos hilt"
+        "Bandos hilt",
+        "Godsword shard 1",
+        "Godsword shard 2",
+        "Godsword shard 3"
       ]
     },
     {
       "product": "Bandos godsword (or)",
       "requires": [
         "Bandos godsword ornament kit",
-        "Bandos hilt"
+        "Bandos hilt",
+        "Godsword shard 1",
+        "Godsword shard 2",
+        "Godsword shard 3"
       ]
     },
     {
@@ -282,9 +306,16 @@
       ]
     },
     {
+      "product": "Berserker necklace",
+      "requires": [
+        "Onyx"
+      ]
+    },
+    {
       "product": "Berserker necklace (or)",
       "requires": [
-        "Berserker necklace ornament kit"
+        "Berserker necklace ornament kit",
+        "Onyx"
       ]
     },
     {
@@ -916,7 +947,9 @@
     {
       "product": "Elysian spirit shield",
       "requires": [
-        "Elysian sigil"
+        "Elysian sigil",
+        "Holy elixir",
+        "Spirit shield"
       ]
     },
     {
@@ -1151,12 +1184,18 @@
     {
       "product": "Heavy ballista",
       "requires": [
+        "Ballista limbs",
+        "Ballista spring",
+        "Heavy frame",
         "Monkey tail"
       ]
     },
     {
       "product": "Heavy ballista (or)",
       "requires": [
+        "Ballista limbs",
+        "Ballista spring",
+        "Heavy frame",
         "Monkey tail"
       ]
     },
@@ -1352,6 +1391,9 @@
     {
       "product": "Light ballista",
       "requires": [
+        "Ballista limbs",
+        "Ballista spring",
+        "Light frame",
         "Monkey tail"
       ]
     },
@@ -1515,6 +1557,7 @@
     {
       "product": "Necklace of rupture",
       "requires": [
+        "Elder venator fang",
         "Zenyte shard"
       ]
     },
@@ -1578,6 +1621,66 @@
       "product": "Oily pearl fishing rod",
       "requires": [
         "Pearl fishing rod"
+      ]
+    },
+    {
+      "product": "Onyx amulet",
+      "requires": [
+        "Onyx"
+      ]
+    },
+    {
+      "product": "Onyx amulet (u)",
+      "requires": [
+        "Onyx"
+      ]
+    },
+    {
+      "product": "Onyx bolt tips",
+      "requires": [
+        "Onyx"
+      ]
+    },
+    {
+      "product": "Onyx bolts",
+      "requires": [
+        "Onyx"
+      ]
+    },
+    {
+      "product": "Onyx bolts (e)",
+      "requires": [
+        "Onyx"
+      ]
+    },
+    {
+      "product": "Onyx bracelet",
+      "requires": [
+        "Onyx"
+      ]
+    },
+    {
+      "product": "Onyx dragon bolts",
+      "requires": [
+        "Onyx"
+      ]
+    },
+    {
+      "product": "Onyx dragon bolts (e)",
+      "requires": [
+        "Onyx"
+      ]
+    },
+    {
+      "product": "Onyx necklace",
+      "requires": [
+        "Onyx"
+      ]
+    },
+    {
+      "product": "Onyx ring",
+      "requires": [
+        "Onyx"
       ]
     },
     {
@@ -1672,6 +1775,18 @@
       ]
     },
     {
+      "product": "Regen bracelet",
+      "requires": [
+        "Onyx"
+      ]
+    },
+    {
+      "product": "Ring of stone",
+      "requires": [
+        "Onyx"
+      ]
+    },
+    {
       "product": "Ring of suffering",
       "requires": [
         "Zenyte shard"
@@ -1721,6 +1836,13 @@
       ]
     },
     {
+      "product": "Runed sceptre",
+      "requires": [
+        "Bottom of sceptre",
+        "Top of sceptre"
+      ]
+    },
+    {
       "product": "Sanguine scythe of vitur",
       "requires": [
         "Sanguine ornament kit",
@@ -1748,12 +1870,18 @@
     {
       "product": "Saradomin godsword",
       "requires": [
+        "Godsword shard 1",
+        "Godsword shard 2",
+        "Godsword shard 3",
         "Saradomin hilt"
       ]
     },
     {
       "product": "Saradomin godsword (or)",
       "requires": [
+        "Godsword shard 1",
+        "Godsword shard 2",
+        "Godsword shard 3",
         "Saradomin godsword ornament kit",
         "Saradomin hilt"
       ]
@@ -1762,6 +1890,13 @@
       "product": "Saradomin's blessed sword",
       "requires": [
         "Saradomin sword"
+      ]
+    },
+    {
+      "product": "Saturated heart",
+      "requires": [
+        "Ancient essence",
+        "Imbued heart"
       ]
     },
     {
@@ -1787,6 +1922,24 @@
       "requires": [
         "Ancient icon",
         "Shadow quartz"
+      ]
+    },
+    {
+      "product": "Skull sceptre",
+      "requires": [
+        "Bottom of sceptre",
+        "Left skull half",
+        "Right skull half",
+        "Top of sceptre"
+      ]
+    },
+    {
+      "product": "Skull sceptre (i)",
+      "requires": [
+        "Bottom of sceptre",
+        "Left skull half",
+        "Right skull half",
+        "Top of sceptre"
       ]
     },
     {
@@ -1835,7 +1988,9 @@
     {
       "product": "Spectral spirit shield",
       "requires": [
-        "Spectral sigil"
+        "Holy elixir",
+        "Spectral sigil",
+        "Spirit shield"
       ]
     },
     {
@@ -1887,6 +2042,13 @@
       "requires": [
         "Steam battlestaff",
         "Steam staff upgrade kit"
+      ]
+    },
+    {
+      "product": "Strange skull",
+      "requires": [
+        "Left skull half",
+        "Right skull half"
       ]
     },
     {
@@ -2259,12 +2421,18 @@
     {
       "product": "Zamorak godsword",
       "requires": [
+        "Godsword shard 1",
+        "Godsword shard 2",
+        "Godsword shard 3",
         "Zamorak hilt"
       ]
     },
     {
       "product": "Zamorak godsword (or)",
       "requires": [
+        "Godsword shard 1",
+        "Godsword shard 2",
+        "Godsword shard 3",
         "Zamorak godsword ornament kit",
         "Zamorak hilt"
       ]

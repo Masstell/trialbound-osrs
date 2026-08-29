@@ -21,6 +21,7 @@ import mvdicarlo.crabmanmode.events.ClogDataLoaded;
 import net.runelite.api.Client;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.game.ItemManager;
+import net.runelite.client.game.ItemVariationMapping;
 
 /**
  * Items that are not collection log entries but are crafted FROM them (Toxic
@@ -102,6 +103,16 @@ public class DerivedItemRegistry {
                 }
             }
             if (requires != null && !clogData.isClogItem(id)) {
+                // A single-ingredient "recipe" whose ingredient shares the
+                // product's variation family is a charge transition (Uncharged
+                // trident -> Trident of the seas), not a real derivation; the
+                // family scan in LockedItemHelper covers those. Multi-
+                // ingredient recipes keep their same-family requirement (the
+                // (e) tridents still need the Kraken tentacle AND a trident).
+                if (requires.size() == 1
+                        && ItemVariationMapping.map(requires.get(0)) == ItemVariationMapping.map(id)) {
+                    continue;
+                }
                 byProduct.put(id, requires);
             }
         }
