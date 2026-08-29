@@ -196,6 +196,9 @@ public class CrabmanModePlugin extends Plugin {
     private mvdicarlo.crabmanmode.enforcement.DerivedItemRegistry derivedItemRegistry;
 
     @Inject
+    private mvdicarlo.crabmanmode.enforcement.LockedItemHelper lockedItemHelper;
+
+    @Inject
     private mvdicarlo.crabmanmode.loot.ShopAcquisitionService shopAcquisitionService;
 
     @Inject
@@ -343,6 +346,7 @@ public class CrabmanModePlugin extends Plugin {
         loadResources();
         groupState.addListener(groupStateListener);
         groupState.addListener(loginUnlockSummary);
+        groupState.addListener(lockedItemHelper);
         initializeGroupState();
 
         overlayManager.add(CrabmanModeOverlay);
@@ -363,6 +367,7 @@ public class CrabmanModePlugin extends Plugin {
         eventBus.register(equipEnforcementService);
         eventBus.register(tradeWarningService);
         eventBus.register(derivedItemRegistry);
+        eventBus.register(lockedItemHelper);
         eventBus.register(shopAcquisitionService);
         eventBus.register(clogMenuService);
         eventBus.register(loginUnlockSummary);
@@ -394,6 +399,7 @@ public class CrabmanModePlugin extends Plugin {
         super.shutDown();
         groupState.removeListener(groupStateListener);
         groupState.removeListener(loginUnlockSummary);
+        groupState.removeListener(lockedItemHelper);
         groupState.close();
         overlayManager.remove(CrabmanModeOverlay);
         chatCommandManager.unregisterCommand(TB_UNLOCKS_STRING);
@@ -412,6 +418,7 @@ public class CrabmanModePlugin extends Plugin {
         eventBus.unregister(equipEnforcementService);
         eventBus.unregister(tradeWarningService);
         eventBus.unregister(derivedItemRegistry);
+        eventBus.unregister(lockedItemHelper);
         eventBus.unregister(shopAcquisitionService);
         eventBus.unregister(clogMenuService);
         eventBus.unregister(loginUnlockSummary);
@@ -557,6 +564,9 @@ public class CrabmanModePlugin extends Plugin {
             return;
         }
         groupState.initialize(groupKey);
+        // initialize() replaces the unlock projection without firing
+        // listeners; drop the enforcement caches built for the old group.
+        lockedItemHelper.invalidate();
         if (panel != null) {
             javax.swing.SwingUtilities.invokeLater(panel::refreshAll);
         }

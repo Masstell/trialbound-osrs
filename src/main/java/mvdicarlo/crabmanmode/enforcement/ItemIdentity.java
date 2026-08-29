@@ -23,11 +23,12 @@ import java.util.Set;
 public final class ItemIdentity {
     /**
      * Suffixes that describe a state of the SAME item rather than a
-     * different item: charge, degradation, trouver-locked, corruption...
+     * different item: charge, degradation, trouver-locked, corruption,
+     * imbue ((i)/(ei) - Black mask (i), Salve amulet (ei))...
      */
     private static final Set<String> STATE_SUFFIXES = new HashSet<>(Arrays.asList(
             "uncharged", "charged", "empty", "full", "inert", "broken", "damaged",
-            "l", "u", "c", "open", "closed", "active", "inactive", "lit", "unlit"));
+            "l", "u", "c", "i", "ei", "open", "closed", "active", "inactive", "lit", "unlit"));
 
     /**
      * True when an unlock of {@code nameB} should count for {@code nameA}
@@ -36,12 +37,15 @@ public final class ItemIdentity {
      * <ul>
      * <li>Identical names always share (Graceful recolours, Chompy bird
      * hats - indistinguishable by name anyway).</li>
-     * <li>Different base names share too: that is the classic charge family
-     * where charging renames the item (Uncharged trident / Trident of the
-     * Seas).</li>
+     * <li>Different base names share only when one side carries an explicit
+     * state marker: that is the classic charge family where charging
+     * renames the item (Uncharged trident / Trident of the Seas). Without
+     * a state marker, different bases in one family are distinct unlocks
+     * (Amulet of eternal glory vs Amulet of glory (t4), Elite void top vs
+     * Void knight top).</li>
      * <li>Same base name: share only when the differing suffixes are pure
-     * state ((uncharged), (broken), (l)...). Cosmetic suffixes ((g), (t),
-     * (h1), (light), (Guthix)...) mark distinct unlockables.</li>
+     * state ((uncharged), (broken), (l), (i)...). Cosmetic suffixes ((g),
+     * (t), (h1), (light), (Guthix)...) mark distinct unlockables.</li>
      * <li>Numeric suffixes are charges on a single item (Black mask (10),
      * Ahrim's hood 100) unless BOTH sides are clog identities, where they
      * enumerate distinct slots (Godsword shard 1/2/3, Shayzien gloves
@@ -58,7 +62,7 @@ public final class ItemIdentity {
         Parsed a = parse(nameA);
         Parsed b = parse(nameB);
         if (!a.base.equalsIgnoreCase(b.base)) {
-            return true;
+            return hasStateMarker(a) || hasStateMarker(b);
         }
         for (String suffix : symmetricDifference(a.suffixes, b.suffixes)) {
             if (!isStateSuffix(suffix, bothClogIdentities)) {
@@ -73,6 +77,26 @@ public final class ItemIdentity {
             return !bothClogIdentities;
         }
         return STATE_SUFFIXES.contains(suffix);
+    }
+
+    /**
+     * True when the name carries an explicit state word - as a suffix
+     * ("Dizana's quiver (uncharged)", "Trident of the seas (full)") or a
+     * word inside the base itself ("Uncharged trident"). Only such names
+     * may bridge different base names within a variation family.
+     */
+    private static boolean hasStateMarker(Parsed parsed) {
+        for (String suffix : parsed.suffixes) {
+            if (STATE_SUFFIXES.contains(suffix)) {
+                return true;
+            }
+        }
+        for (String word : parsed.base.split(" ")) {
+            if (STATE_SUFFIXES.contains(word)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean isNumeric(String s) {
@@ -95,7 +119,7 @@ public final class ItemIdentity {
             if (base.endsWith(")")) {
                 int open = base.lastIndexOf(" (");
                 if (open > 0 && base.indexOf('(', open + 2) < 0) {
-                    suffixes.add(base.substring(open + 2, base.length() - 1).trim());
+                    addSuffix(suffixes, base.substring(open + 2, base.length() - 1).trim());
                     base = base.substring(0, open).trim();
                     continue;
                 }
@@ -110,6 +134,22 @@ public final class ItemIdentity {
             break;
         }
         return new Parsed(base, suffixes);
+    }
+
+    /**
+     * Splits combined trim/imbue-plus-charge suffixes - "Amulet of glory
+     * (t4)" is the trimmed glory holding 4 charges, "Ring of wealth (i5)"
+     * the imbued ring - so the charge count compares as a state while the
+     * trim/imbue marker keeps its own meaning.
+     */
+    private static void addSuffix(List<String> suffixes, String suffix) {
+        if (suffix.length() > 1 && (suffix.charAt(0) == 't' || suffix.charAt(0) == 'i')
+                && isNumeric(suffix.substring(1))) {
+            suffixes.add(String.valueOf(suffix.charAt(0)));
+            suffixes.add(suffix.substring(1));
+            return;
+        }
+        suffixes.add(suffix);
     }
 
     /** Multiset symmetric difference of the two suffix lists. */

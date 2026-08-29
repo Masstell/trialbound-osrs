@@ -38,6 +38,18 @@ public class ItemIdentityTest {
         shares("Ahrim's hood 100", "Ahrim's hood", false);
         // Corruption is a state, not a different unlock.
         shares("Blade of saeldor (c)", "Blade of saeldor (inactive)", false);
+        // Imbues are states of the same unlock.
+        shares("Black mask (i)", "Black mask (10)", false);
+        shares("Black mask (10) (i)", "Black mask (10)", false);
+        shares("Berserker ring (i)", "Berserker ring", false);
+        shares("Ring of the gods (i)", "Ring of the gods", false);
+        // Trimmed charge suffixes: (t)/(t1)..(t4) drain states of the (t4)
+        // Treasure Trails glory, distinct from every plain glory.
+        shares("Amulet of glory (t)", "Amulet of glory (t4)", false);
+        shares("Amulet of glory (t1)", "Amulet of glory (t4)", false);
+        // A renamed charge/upgrade form still bridges different bases when a
+        // state word is present on either side.
+        shares("Blessed dizana's quiver", "Dizana's quiver (uncharged)", false);
     }
 
     @Test
@@ -63,6 +75,16 @@ public class ItemIdentityTest {
         distinct("Mystic hat (light)", "Mystic hat (dark)", true);
         distinct("Bucket helm", "Bucket helm (g)", true);
         distinct("Rune scimitar ornament kit (Guthix)", "Rune scimitar ornament kit (Zamorak)", true);
+    }
+
+    @Test
+    public void differentBasesWithoutStateMarkersAreDistinct() {
+        // Same variation family, but each its own collection log slot: the
+        // eternal glory must not merge with the trimmed or plain glories.
+        distinct("Amulet of eternal glory", "Amulet of glory (t4)", true);
+        distinct("Amulet of eternal glory", "Amulet of glory", false);
+        distinct("Amulet of glory", "Amulet of glory (t4)", false);
+        distinct("Void knight top", "Elite void top", true);
     }
 
     @Test

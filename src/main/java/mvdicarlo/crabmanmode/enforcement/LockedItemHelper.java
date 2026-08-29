@@ -4,34 +4,60 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import mvdicarlo.crabmanmode.SessionState;
 import mvdicarlo.crabmanmode.clog.ClogDataService;
+import mvdicarlo.crabmanmode.events.ClogDataLoaded;
+import mvdicarlo.crabmanmode.store.GroupStateListener;
 import mvdicarlo.crabmanmode.store.GroupStateService;
+import mvdicarlo.crabmanmode.store.TbEventRecord;
 import net.runelite.api.Client;
+import net.runelite.client.callback.ClientThread;
+import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.ItemVariationMapping;
 
-/** Shared "is this item locked for us right now" predicate. */
+/**
+ * Shared "is this item locked for us right now" predicate.
+ *
+ * <p>The name parsing and recursive recipe scans are too heavy for the
+ * call sites (per menu entry per tick, per rendered widget item per
+ * frame), so results are memoized: {@link #clogGroupMembers} per canonical
+ * id (names and variations are static per clog load) and {@link #isLocked}
+ * per item id (invalidated whenever the group's unlocks change). A
+ * precomputed {@link #getEffectiveClogUnlocks() snapshot} of effectively
+ * unlocked clog items serves callers off the client thread (Swing panels).
+ */
 @Singleton
-public class LockedItemHelper {
+public class LockedItemHelper implements GroupStateListener {
     private final SessionState sessionState;
     private final ClogDataService clogData;
     private final GroupStateService groupState;
     private final ItemManager itemManager;
     private final DerivedItemRegistry derived;
     private final Client client;
+    private final ClientThread clientThread;
+
+    private final Map<Integer, List<Integer>> groupCache = new ConcurrentHashMap<>();
+    private final Map<Integer, Boolean> lockedCache = new ConcurrentHashMap<>();
+    private volatile Set<Integer> effectiveClogUnlocks = Collections.emptySet();
 
     @Inject
     public LockedItemHelper(SessionState sessionState, ClogDataService clogData, GroupStateService groupState,
-            ItemManager itemManager, DerivedItemRegistry derived, Client client) {
+            ItemManager itemManager, DerivedItemRegistry derived, Client client, ClientThread clientThread) {
         this.sessionState = sessionState;
         this.clogData = clogData;
         this.groupState = groupState;
         this.itemManager = itemManager;
         this.derived = derived;
         this.client = client;
+        this.clientThread = clientThread;
     }
 
     /** True when enforcement applies at all (active character, data loaded). */
@@ -57,6 +83,10 @@ public class LockedItemHelper {
      */
     public List<Integer> clogGroupMembers(int itemId) {
         int canonical = itemManager.canonicalize(itemId);
+        List<Integer> cached = groupCache.get(canonical);
+        if (cached != null) {
+            return cached;
+        }
         boolean itemIsClog = clogData.isClogItem(canonical);
         String itemName = itemIsClog ? clogData.getItemName(canonical)
                 : client.getItemDefinition(canonical).getName();
@@ -70,7 +100,9 @@ public class LockedItemHelper {
                 members.add(variant);
             }
         }
-        return members;
+        List<Integer> result = Collections.unmodifiableList(members);
+        groupCache.put(canonical, result);
+        return result;
     }
 
     /** Max recipe hops between clog items (Amulet of fury -> Onyx -> Uncut onyx). */
@@ -127,7 +159,18 @@ public class LockedItemHelper {
      * kits, trouver parchment), or it is crafted from clog items of which
      * any is still locked (blowpipe from Tanzanite fang etc.).
      * Client thread only (reads item names).
-     *
+     */
+    public boolean isLocked(int itemId) {
+        Boolean cached = lockedCache.get(itemId);
+        if (cached != null) {
+            return cached;
+        }
+        boolean locked = computeLocked(itemId);
+        lockedCache.put(itemId, locked);
+        return locked;
+    }
+
+    /**
      * <p>Derived requirements are checked against the item's own canonical id
      * first, before the variation-group scan. Some crafted items (e.g. toxic
      * trident/staff pairs) share a RuneLite variation group with just one of
@@ -136,7 +179,7 @@ public class LockedItemHelper {
      * item. Requirement checks are themselves family-aware via
      * {@link #clogUnlocked}.
      */
-    public boolean isLocked(int itemId) {
+    private boolean computeLocked(int itemId) {
         int canonical = itemManager.canonicalize(itemId);
         List<Integer> requirements = derived.getRequirements(canonical);
         if (!requirements.isEmpty()) {
@@ -167,6 +210,55 @@ public class LockedItemHelper {
         }
         int named = clogItemByStrippedName(canonical);
         return named > 0 && !clogUnlocked(named);
+    }
+
+    /**
+     * Clog item ids the group has effectively unlocked - directly, through
+     * another charge state of the same family, or by crafting from
+     * unlocked clog items. Rebuilt on the client thread whenever unlocks
+     * change; safe to read from any thread (Swing panels, purchase guards).
+     */
+    public Set<Integer> getEffectiveClogUnlocks() {
+        return effectiveClogUnlocks;
+    }
+
+    /** Drops unlock-dependent caches and schedules a snapshot rebuild. */
+    public void invalidate() {
+        lockedCache.clear();
+        clientThread.invokeLater(this::recomputeEffectiveUnlocks);
+    }
+
+    @Override
+    public void onUnlocksAdded(List<TbEventRecord> unlocks) {
+        invalidate();
+    }
+
+    @Override
+    public void onUnlocksRemoved(List<Integer> itemIds) {
+        invalidate();
+    }
+
+    @Subscribe
+    public void onClogDataLoaded(ClogDataLoaded event) {
+        groupCache.clear();
+        // invokeLater, not inline: DerivedItemRegistry rebuilds its recipe
+        // mapping on this same event and subscriber order is unspecified.
+        invalidate();
+    }
+
+    /** Client thread only. */
+    private void recomputeEffectiveUnlocks() {
+        if (!clogData.isLoaded()) {
+            effectiveClogUnlocks = Collections.emptySet();
+            return;
+        }
+        Set<Integer> unlocked = new HashSet<>();
+        for (int itemId : clogData.getAllClogItemIds()) {
+            if (clogUnlocked(itemId)) {
+                unlocked.add(itemId);
+            }
+        }
+        effectiveClogUnlocks = Collections.unmodifiableSet(unlocked);
     }
 
     /**

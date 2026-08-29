@@ -38,11 +38,13 @@ public class GritService {
     private final GroupStateService groupState;
     private final TrialboundChat chat;
     private final mvdicarlo.crabmanmode.ui.GritToastOverlay toastOverlay;
+    private final mvdicarlo.crabmanmode.enforcement.LockedItemHelper locked;
 
     @Inject
     public GritService(SessionState sessionState, ClogDataService clogData,
             BossTierRegistry registry, TrialService trialService, GroupStateService groupState, TrialboundChat chat,
-            mvdicarlo.crabmanmode.ui.GritToastOverlay toastOverlay) {
+            mvdicarlo.crabmanmode.ui.GritToastOverlay toastOverlay,
+            mvdicarlo.crabmanmode.enforcement.LockedItemHelper locked) {
         this.sessionState = sessionState;
         this.clogData = clogData;
         this.registry = registry;
@@ -50,6 +52,7 @@ public class GritService {
         this.groupState = groupState;
         this.chat = chat;
         this.toastOverlay = toastOverlay;
+        this.locked = locked;
     }
 
     /**
@@ -143,6 +146,12 @@ public class GritService {
         }
         if (!clogData.isClogItem(itemId)) {
             return PurchaseResult.NOT_READY;
+        }
+        // GroupStateService only knows direct unlock events; an item already
+        // freed through its family or a recipe (Onyx via Uncut onyx) must
+        // not eat pooled grit for an unlock that changes nothing.
+        if (locked.getEffectiveClogUnlocks().contains(itemId)) {
+            return PurchaseResult.ALREADY_UNLOCKED;
         }
         PurchaseResult result = groupState.purchase(itemId, itemName, getPrice(itemId));
         log.debug("Purchase {} ({}) -> {}", itemName, itemId, result);
