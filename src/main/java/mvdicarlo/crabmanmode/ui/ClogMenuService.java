@@ -41,11 +41,12 @@ public class ClogMenuService {
     private final GroupStateService groupState;
     private final GritService gritService;
     private final TrialboundChat chat;
+    private final mvdicarlo.crabmanmode.enforcement.LockedItemHelper locked;
 
     @Inject
     public ClogMenuService(Client client, ClientThread clientThread, ItemManager itemManager,
             SessionState sessionState, ClogDataService clogData, GroupStateService groupState, GritService gritService,
-            TrialboundChat chat) {
+            TrialboundChat chat, mvdicarlo.crabmanmode.enforcement.LockedItemHelper locked) {
         this.client = client;
         this.clientThread = clientThread;
         this.itemManager = itemManager;
@@ -54,6 +55,7 @@ public class ClogMenuService {
         this.groupState = groupState;
         this.gritService = gritService;
         this.chat = chat;
+        this.locked = locked;
     }
 
     @Subscribe
@@ -105,7 +107,9 @@ public class ClogMenuService {
             return -1;
         }
         int itemId = itemManager.canonicalize(widget.getItemId());
-        if (itemId <= 0 || !clogData.isClogItem(itemId) || groupState.isUnlocked(itemId)) {
+        // Family-aware: an unlock on any charge state (Uncharged trident vs
+        // the (full) clog entry) must suppress the purchase option.
+        if (itemId <= 0 || !clogData.isClogItem(itemId) || !locked.isLocked(itemId)) {
             return -1;
         }
         return itemId;
