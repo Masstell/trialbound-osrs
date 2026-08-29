@@ -1746,6 +1746,12 @@
       ]
     },
     {
+      "product": "Sanguinesti staff",
+      "requires": [
+        "Sanguinesti staff (uncharged)"
+      ]
+    },
+    {
       "product": "Saradomin godsword",
       "requires": [
         "Saradomin hilt"
@@ -1768,6 +1774,12 @@
       "product": "Scorching bow",
       "requires": [
         "Tormented synapse"
+      ]
+    },
+    {
+      "product": "Scythe of Vitur",
+      "requires": [
+        "Scythe of Vitur (uncharged)"
       ]
     },
     {
@@ -2021,6 +2033,12 @@
       "requires": [
         "Magic fang",
         "Uncharged trident"
+      ]
+    },
+    {
+      "product": "Tumeken's shadow",
+      "requires": [
+        "Tumeken's shadow (uncharged)"
       ]
     },
     {

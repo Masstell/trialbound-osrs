@@ -61,16 +61,29 @@ public class LockedItemHelper {
      * clog item the group has not unlocked, or it is crafted from clog items
      * of which any is still locked (blowpipe from Tanzanite fang etc.).
      * Client thread only (reads item names).
+     *
+     * <p>Derived requirements are checked against the item's own canonical id
+     * first, before falling back to {@link #lockCheckId}'s variation-mapping
+     * collapse. Some crafted items (e.g. toxic trident/staff pairs) share a
+     * RuneLite variation group with just one of their required ingredients -
+     * checking that collapsed id alone would silently ignore the other
+     * required ingredient (e.g. Magic fang) and under-lock the item.
      */
     public boolean isLocked(int itemId) {
-        int id = lockCheckId(itemId);
+        int canonical = itemManager.canonicalize(itemId);
+        List<Integer> requirements = derived.getRequirements(canonical);
+        if (!requirements.isEmpty()) {
+            for (int required : requirements) {
+                if (!groupState.isUnlocked(required)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        int id = lockCheckId(canonical);
         if (clogData.isClogItem(id)) {
             return !groupState.isUnlocked(id);
-        }
-        for (int required : derived.getRequirements(id)) {
-            if (!groupState.isUnlocked(required)) {
-                return true;
-            }
         }
         int named = clogItemByStrippedName(id);
         return named > 0 && !groupState.isUnlocked(named);
