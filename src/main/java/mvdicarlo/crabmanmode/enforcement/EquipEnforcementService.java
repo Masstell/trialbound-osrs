@@ -38,9 +38,15 @@ public class EquipEnforcementService {
      */
     private static final Set<String> ALLOWED_OPTIONS = new HashSet<>(Arrays.asList(
             "Drop", "Destroy", "Examine", "Remove", "Check", "Value", "Take", "Empty"));
-    /** Allowed option families (bank, trade, shop, GE collection). */
+    /**
+     * Allowed option families (bank, trade, shop, GE collection). "Buy",
+     * "Select" and "Exchange" stay: purchasing a locked shop item is the
+     * acquisition that UNLOCKS it (shop-whitelist possession path) - it
+     * must never be blocked by its own lock.
+     */
     private static final String[] ALLOWED_PREFIXES = {
-            "Deposit", "Withdraw", "Offer", "Sell", "Store", "Collect"};
+            "Deposit", "Withdraw", "Offer", "Sell", "Store", "Collect",
+            "Buy", "Select", "Exchange"};
     private static final long WARN_INTERVAL_MS = 5_000;
 
     private final Client client;
