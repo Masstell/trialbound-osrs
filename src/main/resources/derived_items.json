@@ -1721,6 +1721,13 @@
       ]
     },
     {
+      "product": "Runed sceptre",
+      "requires": [
+        "Bottom of sceptre",
+        "Top of sceptre"
+      ]
+    },
+    {
       "product": "Sanguine scythe of vitur",
       "requires": [
         "Sanguine ornament kit",
@@ -1746,12 +1753,6 @@
       ]
     },
     {
-      "product": "Sanguinesti staff",
-      "requires": [
-        "Sanguinesti staff (uncharged)"
-      ]
-    },
-    {
       "product": "Saradomin godsword",
       "requires": [
         "Saradomin hilt"
@@ -1771,15 +1772,16 @@
       ]
     },
     {
-      "product": "Scorching bow",
+      "product": "Saturated heart",
       "requires": [
-        "Tormented synapse"
+        "Ancient essence",
+        "Imbued heart"
       ]
     },
     {
-      "product": "Scythe of Vitur",
+      "product": "Scorching bow",
       "requires": [
-        "Scythe of Vitur (uncharged)"
+        "Tormented synapse"
       ]
     },
     {
@@ -1799,6 +1801,24 @@
       "requires": [
         "Ancient icon",
         "Shadow quartz"
+      ]
+    },
+    {
+      "product": "Skull sceptre",
+      "requires": [
+        "Bottom of sceptre",
+        "Left skull half",
+        "Right skull half",
+        "Top of sceptre"
+      ]
+    },
+    {
+      "product": "Skull sceptre (i)",
+      "requires": [
+        "Bottom of sceptre",
+        "Left skull half",
+        "Right skull half",
+        "Top of sceptre"
       ]
     },
     {
@@ -1899,6 +1919,13 @@
       "requires": [
         "Steam battlestaff",
         "Steam staff upgrade kit"
+      ]
+    },
+    {
+      "product": "Strange skull",
+      "requires": [
+        "Left skull half",
+        "Right skull half"
       ]
     },
     {
@@ -2033,12 +2060,6 @@
       "requires": [
         "Magic fang",
         "Uncharged trident"
-      ]
-    },
-    {
-      "product": "Tumeken's shadow",
-      "requires": [
-        "Tumeken's shadow (uncharged)"
       ]
     },
     {

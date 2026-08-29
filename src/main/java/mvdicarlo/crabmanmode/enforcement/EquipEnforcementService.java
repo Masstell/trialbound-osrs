@@ -19,15 +19,28 @@ import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.game.ItemManager;
 
 /**
- * You can hold a locked clog item, but you cannot use it: equip and consume
- * options (wield, break, eat, invoke...) are removed from the menu, with a
- * click-consume backstop (e.g. for menus built before an unlock state change).
+ * You can hold a locked clog item, but you cannot use it. Deny-by-default:
+ * every menu option on a locked item is removed unless it is inert
+ * housekeeping (move/bank/drop/trade/info). A verb blocklist can never keep
+ * up with the game's vocabulary ("Last teleport", "Reminisce", "Play",
+ * destination names...), so unknown verbs are treated as use and stripped,
+ * with a click-consume backstop (e.g. for menus built before an unlock
+ * state change).
  */
 @Singleton
 public class EquipEnforcementService {
-    private static final Set<String> EQUIP_OPTIONS = new HashSet<>(Arrays.asList(
-            "Wield", "Wear", "Equip",
-            "Break", "Eat", "Drink", "Invoke", "Rub", "Read", "Commune", "Teleport"));
+    /**
+     * Options that never USE the item: moving, storing, discarding, info.
+     * "Use" is deliberately absent - using a rune ON a locked rune pouch is
+     * how you fill it, so both directions of Use are stripped. "Empty" stays
+     * so contents are never stranded inside a locked container (the only
+     * teleport-on-Empty item, the ectophial, is not a clog item).
+     */
+    private static final Set<String> ALLOWED_OPTIONS = new HashSet<>(Arrays.asList(
+            "Drop", "Destroy", "Examine", "Remove", "Check", "Value", "Take", "Empty"));
+    /** Allowed option families (bank, trade, shop, GE collection). */
+    private static final String[] ALLOWED_PREFIXES = {
+            "Deposit", "Withdraw", "Offer", "Sell", "Store", "Collect"};
     private static final long WARN_INTERVAL_MS = 5_000;
 
     private final Client client;
@@ -52,9 +65,22 @@ public class EquipEnforcementService {
         return config.enforceEquipBlock() && locked.enforcementActive();
     }
 
+    /** True for options that merely move/store/discard/inspect the item. */
+    private static boolean allowedOption(String option) {
+        if (option == null || ALLOWED_OPTIONS.contains(option)) {
+            return true;
+        }
+        for (String prefix : ALLOWED_PREFIXES) {
+            if (option.startsWith(prefix)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Subscribe
     public void onMenuEntryAdded(MenuEntryAdded event) {
-        if (!active() || !EQUIP_OPTIONS.contains(event.getOption())) {
+        if (!active() || allowedOption(event.getOption())) {
             return;
         }
         int itemId = event.getMenuEntry().getItemId();
@@ -73,7 +99,7 @@ public class EquipEnforcementService {
 
     @Subscribe
     public void onMenuOptionClicked(MenuOptionClicked event) {
-        if (!active() || !EQUIP_OPTIONS.contains(event.getMenuOption())) {
+        if (!active() || allowedOption(event.getMenuOption())) {
             return;
         }
         int itemId = event.getMenuEntry().getItemId();
@@ -84,7 +110,7 @@ public class EquipEnforcementService {
         long now = System.currentTimeMillis();
         if (now - lastWarnMs > WARN_INTERVAL_MS) {
             lastWarnMs = now;
-            chat.send("Trialbound: you can't equip "
+            chat.send("Trialbound: you can't use "
                     + client.getItemDefinition(itemManager.canonicalize(itemId)).getName()
                     + " - it isn't unlocked yet.");
         }

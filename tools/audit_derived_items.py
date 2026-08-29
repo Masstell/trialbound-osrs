@@ -73,6 +73,8 @@ MANUAL_EXTRAS = {
     "Necklace of anguish": ["Zenyte shard"],
     "Ring of suffering": ["Zenyte shard"],
     "Tormented bracelet": ["Zenyte shard"],
+    # Permanent combine, not a charge: needs the Muspah essence slot too.
+    "Saturated heart": ["Imbued heart", "Ancient essence"],
 }
 
 EXCLUDED_PRODUCT_PREFIXES = ("Stuffed ", "Ensouled ", "Greenman ", "Cw armour")
@@ -93,7 +95,7 @@ EXCLUDED_PRODUCTS = {
     "Top hat & monocle", "Partyhat & specs", "Pirate hat & patch",
     "Hat eyepatch", "Double eye patch", "Cavalier mask", "Beret mask",
     "Holy moleys", "Dark flippers", "Gem sack", "Fish sack barrel",
-    "Silklined herb sack", "Clothes pouch", "Strange skull", "Runed sceptre",
+    "Silklined herb sack", "Clothes pouch",
 }
 
 
