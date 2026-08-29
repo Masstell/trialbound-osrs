@@ -146,6 +146,10 @@ public class ClogMenuService {
                 chat.send("Not enough pooled Grit for " + name + " (need " + price + ", have "
                         + groupState.getPooledGrit() + ").");
                 break;
+            case CONFLICT:
+                chat.send("The unlock of " + name + " collided with a re-lock from your group - the Grit "
+                        + "was refunded. Try again once your group is in sync.");
+                break;
             default:
                 chat.send("Trialbound isn't ready - purchase failed.");
                 break;

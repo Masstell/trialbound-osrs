@@ -169,6 +169,9 @@ public class CrabmanModePlugin extends Plugin {
     private UnlockAnnouncer unlockAnnouncer;
 
     @Inject
+    private LoginUnlockSummary loginUnlockSummary;
+
+    @Inject
     private mvdicarlo.crabmanmode.grit.GritService gritService;
 
     @Inject
@@ -191,6 +194,9 @@ public class CrabmanModePlugin extends Plugin {
 
     @Inject
     private mvdicarlo.crabmanmode.enforcement.DerivedItemRegistry derivedItemRegistry;
+
+    @Inject
+    private mvdicarlo.crabmanmode.enforcement.LockedItemHelper lockedItemHelper;
 
     @Inject
     private mvdicarlo.crabmanmode.loot.ShopAcquisitionService shopAcquisitionService;
@@ -339,6 +345,8 @@ public class CrabmanModePlugin extends Plugin {
         clientToolbar.addNavigation(navButton);
         loadResources();
         groupState.addListener(groupStateListener);
+        groupState.addListener(loginUnlockSummary);
+        groupState.addListener(lockedItemHelper);
         initializeGroupState();
 
         overlayManager.add(CrabmanModeOverlay);
@@ -359,8 +367,10 @@ public class CrabmanModePlugin extends Plugin {
         eventBus.register(equipEnforcementService);
         eventBus.register(tradeWarningService);
         eventBus.register(derivedItemRegistry);
+        eventBus.register(lockedItemHelper);
         eventBus.register(shopAcquisitionService);
         eventBus.register(clogMenuService);
+        eventBus.register(loginUnlockSummary);
         overlayManager.add(tradeWarningOverlay);
         overlayManager.add(lockedItemOverlay);
         overlayManager.add(clogHighlightOverlay);
@@ -388,6 +398,8 @@ public class CrabmanModePlugin extends Plugin {
     protected void shutDown() throws Exception {
         super.shutDown();
         groupState.removeListener(groupStateListener);
+        groupState.removeListener(loginUnlockSummary);
+        groupState.removeListener(lockedItemHelper);
         groupState.close();
         overlayManager.remove(CrabmanModeOverlay);
         chatCommandManager.unregisterCommand(TB_UNLOCKS_STRING);
@@ -406,8 +418,10 @@ public class CrabmanModePlugin extends Plugin {
         eventBus.unregister(equipEnforcementService);
         eventBus.unregister(tradeWarningService);
         eventBus.unregister(derivedItemRegistry);
+        eventBus.unregister(lockedItemHelper);
         eventBus.unregister(shopAcquisitionService);
         eventBus.unregister(clogMenuService);
+        eventBus.unregister(loginUnlockSummary);
         overlayManager.remove(tradeWarningOverlay);
         overlayManager.remove(lockedItemOverlay);
         overlayManager.remove(clogHighlightOverlay);
@@ -550,6 +564,9 @@ public class CrabmanModePlugin extends Plugin {
             return;
         }
         groupState.initialize(groupKey);
+        // initialize() replaces the unlock projection without firing
+        // listeners; drop the enforcement caches built for the old group.
+        lockedItemHelper.invalidate();
         if (panel != null) {
             javax.swing.SwingUtilities.invokeLater(panel::refreshAll);
         }

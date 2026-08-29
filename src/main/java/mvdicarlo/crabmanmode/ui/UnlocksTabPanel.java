@@ -20,12 +20,15 @@ import javax.swing.JPopupMenu;
 import javax.swing.JMenuItem;
 import javax.swing.SwingUtilities;
 
+import java.util.Set;
+
 import lombok.Value;
 import mvdicarlo.crabmanmode.SessionState;
 import mvdicarlo.crabmanmode.TrialboundChat;
 import mvdicarlo.crabmanmode.clog.ClogDataService;
 import mvdicarlo.crabmanmode.clog.ClogPage;
 import mvdicarlo.crabmanmode.clog.ClogTab;
+import mvdicarlo.crabmanmode.enforcement.LockedItemHelper;
 import mvdicarlo.crabmanmode.grit.GritService;
 import mvdicarlo.crabmanmode.store.GroupStateService;
 import mvdicarlo.crabmanmode.store.PurchaseResult;
@@ -54,6 +57,7 @@ public class UnlocksTabPanel extends JPanel {
     private final ClientThread clientThread;
     private final TrialboundChat chat;
     private final SessionState sessionState;
+    private final LockedItemHelper locked;
 
     private final JLabel gritHeader = new JLabel();
     private final IconTextField searchField = new IconTextField();
@@ -66,7 +70,8 @@ public class UnlocksTabPanel extends JPanel {
 
     @Inject
     public UnlocksTabPanel(ClogDataService clogData, GroupStateService groupState, GritService gritService,
-            ItemManager itemManager, ClientThread clientThread, TrialboundChat chat, SessionState sessionState) {
+            ItemManager itemManager, ClientThread clientThread, TrialboundChat chat, SessionState sessionState,
+            LockedItemHelper locked) {
         this.clogData = clogData;
         this.groupState = groupState;
         this.gritService = gritService;
@@ -74,6 +79,7 @@ public class UnlocksTabPanel extends JPanel {
         this.clientThread = clientThread;
         this.chat = chat;
         this.sessionState = sessionState;
+        this.locked = locked;
 
         setLayout(new BorderLayout(0, 6));
         setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -124,13 +130,18 @@ public class UnlocksTabPanel extends JPanel {
         }
 
         Map<Integer, TbEventRecord> unlocked = groupState.getUnlockedItems();
+        // Enforcement's view, not just the raw unlock events: an item can be
+        // effectively unlocked through another charge state of its family or
+        // a recipe (Onyx via Uncut onyx) - it must not be sold as "Locked".
+        Set<Integer> effective = locked.getEffectiveClogUnlocks();
         String search = searchField.getText() == null ? "" : searchField.getText().toLowerCase().trim();
         int tabIndex = tabFilter.getSelectedIndex(); // 0 = all
         String state = (String) stateFilter.getSelectedItem();
 
         List<Row> rows = new ArrayList<>();
         for (int itemId : clogData.getAllClogItemIds()) {
-            boolean isUnlocked = unlocked.containsKey(itemId);
+            TbEventRecord unlock = unlocked.get(itemId);
+            boolean isUnlocked = unlock != null || effective.contains(itemId);
             if ("Locked".equals(state) && isUnlocked) {
                 continue;
             }
@@ -146,7 +157,7 @@ public class UnlocksTabPanel extends JPanel {
             }
             rows.add(new Row(itemId, name, isUnlocked,
                     isUnlocked ? 0 : gritService.getPrice(itemId),
-                    isUnlocked ? unlocked.get(itemId).getPlayer() : null));
+                    unlock == null ? null : unlock.getPlayer()));
         }
 
         sortRows(rows);
@@ -201,7 +212,9 @@ public class UnlocksTabPanel extends JPanel {
         AsyncBufferedImage icon = itemManager.getImage(row.getItemId());
         if (row.isUnlocked()) {
             icon.addTo(cell);
-            cell.setToolTipText("<html>" + row.getName() + "<br>Unlocked by " + row.getUnlockedBy() + "</html>");
+            cell.setToolTipText("<html>" + row.getName() + "<br>" + (row.getUnlockedBy() != null
+                    ? "Unlocked by " + row.getUnlockedBy()
+                    : "Unlocked via a related unlock") + "</html>");
         } else {
             icon.onLoaded(() -> {
                 cell.setIcon(new ImageIcon(ImageUtil.grayscaleImage(icon)));
@@ -223,6 +236,14 @@ public class UnlocksTabPanel extends JPanel {
     private JPopupMenu buildPopup(Row row) {
         JPopupMenu popup = new JPopupMenu();
         if (row.isUnlocked()) {
+            if (row.getUnlockedBy() == null) {
+                // No unlock event on this exact id: the state comes from a
+                // family sibling or recipe - a relock here would be a no-op.
+                JMenuItem info = new JMenuItem("Unlocked via a related unlock");
+                info.setEnabled(false);
+                popup.add(info);
+                return popup;
+            }
             JMenuItem relock = new JMenuItem("Re-lock " + row.getName());
             relock.addActionListener(e -> {
                 int choice = JOptionPane.showConfirmDialog(this,
@@ -246,10 +267,7 @@ public class UnlocksTabPanel extends JPanel {
                 }
                 PurchaseResult result = gritService.purchaseUnlock(row.getItemId(), row.getName());
                 if (result != PurchaseResult.SUCCESS) {
-                    String message = result == PurchaseResult.INSUFFICIENT_GRIT
-                            ? "Not enough pooled Grit (need " + row.getPrice() + ", have "
-                                    + groupState.getPooledGrit() + ")."
-                            : "Purchase failed: " + result + ".";
+                    String message = purchaseFailureMessage(result, row);
                     clientThread.invokeLater(() -> chat.send(message));
                 }
                 refresh();
@@ -257,6 +275,21 @@ public class UnlocksTabPanel extends JPanel {
             popup.add(unlock);
         }
         return popup;
+    }
+
+    private String purchaseFailureMessage(PurchaseResult result, Row row) {
+        switch (result) {
+            case INSUFFICIENT_GRIT:
+                return "Not enough pooled Grit (need " + row.getPrice() + ", have "
+                        + groupState.getPooledGrit() + ").";
+            case ALREADY_UNLOCKED:
+                return row.getName() + " is already unlocked.";
+            case CONFLICT:
+                return "The unlock of " + row.getName() + " collided with a re-lock from your group - the "
+                        + "Grit was refunded. Try again once your group is in sync.";
+            default:
+                return "Trialbound isn't ready - purchase failed.";
+        }
     }
 
     @Value

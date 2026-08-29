@@ -126,6 +126,8 @@ public class GroupStateService {
         if (!ready) {
             return PurchaseResult.NOT_READY;
         }
+        int generation;
+        long now;
         synchronized (lock) {
             if (unlockedByItem.containsKey(itemId)) {
                 return PurchaseResult.ALREADY_UNLOCKED;
@@ -133,14 +135,76 @@ public class GroupStateService {
             if (pooledGrit < cost) {
                 return PurchaseResult.INSUFFICIENT_GRIT;
             }
+            generation = relockCount(itemId);
+            // Stamp the purchase strictly after every known relock: a
+            // teammate's relock can carry a future createdOn (clock skew),
+            // and this intentional re-purchase must survive it.
+            now = Math.max(System.currentTimeMillis(), latestRelockAt(itemId) + 1);
         }
-        long now = System.currentTimeMillis();
         String player = currentPlayer();
         List<TbEventRecord> batch = new ArrayList<>(2);
-        batch.add(TbEventRecord.unlockPurchase(itemId, itemName, player, cost, now));
-        batch.add(TbEventRecord.purchaseSpend(itemId, player, cost, now));
+        batch.add(TbEventRecord.unlockPurchase(itemId, itemName, player, cost, now, generation));
+        batch.add(TbEventRecord.purchaseSpend(itemId, player, cost, now, generation));
         apply(batch, false);
-        return PurchaseResult.SUCCESS;
+        synchronized (lock) {
+            if (unlockedByItem.containsKey(itemId)) {
+                return PurchaseResult.SUCCESS;
+            }
+        }
+        refundConflictedPurchase(itemId, cost, generation);
+        return PurchaseResult.CONFLICT;
+    }
+
+    /**
+     * A relock merged between the pre-checks and apply() tombstoned the
+     * fresh unlock while its paired spend survives (relocks never refund).
+     * Compensate with a deterministic refund event: peers converge on a
+     * net-zero charge, and racing conflicted buyers of the same generation
+     * collide on the refund id just like their spends collided.
+     */
+    private void refundConflictedPurchase(int itemId, int cost, int generation) {
+        String spender = currentPlayer();
+        int refund = cost;
+        synchronized (lock) {
+            TbEventRecord spend = events.get(TbEventRecord.purchaseSpendId(itemId, generation));
+            if (spend != null && spend.getDelta() != null) {
+                refund = -spend.getDelta();
+                if (spend.getPlayer() != null) {
+                    spender = spend.getPlayer();
+                }
+            }
+        }
+        apply(Collections.singletonList(
+                TbEventRecord.purchaseRefund(itemId, spender, refund, System.currentTimeMillis(), generation)),
+                false);
+        log.warn("Purchase of item {} lost to a concurrent relock; refunded {} grit to the pool", itemId, refund);
+    }
+
+    /**
+     * How many times the item has been relocked; the purchase-id generation.
+     * Peers with different relock subsets can disagree on this and mint
+     * non-colliding ids for the same logical purchase - rebuild() settles
+     * that by refusing to count a spend whose unlock lost the item.
+     */
+    private int relockCount(int itemId) {
+        int count = 0;
+        for (TbEventRecord event : events.values()) {
+            if (event.getKind() == TbEventKind.RELOCK && event.getItemId() != null && event.getItemId() == itemId) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /** Newest known relock timestamp for the item, or 0. */
+    private long latestRelockAt(int itemId) {
+        long latest = 0;
+        for (TbEventRecord event : events.values()) {
+            if (event.getKind() == TbEventKind.RELOCK && event.getItemId() != null && event.getItemId() == itemId) {
+                latest = Math.max(latest, event.getCreatedOn());
+            }
+        }
+        return latest;
     }
 
     public void addTrialGrit(int itemId, int delta, String trialKey, int multiplierPercent) {
@@ -324,12 +388,8 @@ public class GroupStateService {
 
         Map<Integer, TbEventRecord> unlocks = new HashMap<>();
         for (TbEventRecord event : events.values()) {
-            if (event.getKind() != TbEventKind.UNLOCK) {
+            if (event.getKind() != TbEventKind.UNLOCK || isTombstoned(event, relockAt)) {
                 continue;
-            }
-            Long relock = relockAt.get(event.getItemId());
-            if (relock != null && event.getCreatedOn() <= relock) {
-                continue; // tombstoned
             }
             unlocks.merge(event.getItemId(), event,
                     (a, b) -> TbEventRecord.WINNER_ORDER.compare(a, b) <= 0 ? a : b);
@@ -341,6 +401,9 @@ public class GroupStateService {
             if (event.getKind() != TbEventKind.GRIT || event.getDelta() == null) {
                 continue;
             }
+            if (spendLostPurchaseRace(event, unlocks, relockAt)) {
+                continue; // the paired unlock lost the item: refund by omission
+            }
             String player = event.getPlayer() == null ? "unknown" : event.getPlayer();
             newBalances.merge(player, event.getDelta(), Integer::sum);
             pooled += event.getDelta();
@@ -349,5 +412,37 @@ public class GroupStateService {
         unlockedByItem = unlocks;
         balances = newBalances;
         pooledGrit = pooled;
+    }
+
+    /**
+     * A relock tombstones every unlock at or before its timestamp.
+     * purchase() stamps re-purchases strictly after all known relocks, so
+     * an intentional re-unlock is never caught by this.
+     */
+    private static boolean isTombstoned(TbEventRecord unlock, Map<Integer, Long> relockAt) {
+        Long relock = relockAt.get(unlock.getItemId());
+        return relock != null && unlock.getCreatedOn() <= relock;
+    }
+
+    /**
+     * A purchase spend counts only while its paired unlock event carries
+     * weight: it IS the item's winning unlock, or it was a real unlock a
+     * relock later tombstoned (relocks never refund). A spend whose unlock
+     * merely lost the item to ANOTHER unlock event - a racing purchase
+     * minted under a diverged relock generation, or a concurrent drop - is
+     * dropped: the automatic refund for races that deterministic id
+     * collisions alone cannot settle.
+     */
+    private boolean spendLostPurchaseRace(TbEventRecord grit, Map<Integer, TbEventRecord> unlocks,
+            Map<Integer, Long> relockAt) {
+        String unlockId = TbEventRecord.pairedUnlockId(grit);
+        if (unlockId == null) {
+            return false;
+        }
+        TbEventRecord unlock = events.get(unlockId);
+        if (unlock == null || isTombstoned(unlock, relockAt)) {
+            return false;
+        }
+        return unlocks.get(unlock.getItemId()) != unlock;
     }
 }

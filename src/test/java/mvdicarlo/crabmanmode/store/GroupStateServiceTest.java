@@ -110,6 +110,116 @@ public class GroupStateServiceTest {
     }
 
     @Test
+    public void repurchaseAfterRelockUnlocksAgain() {
+        service.addAdminGrit(1000);
+        assertEquals(PurchaseResult.SUCCESS, service.purchase(11832, "Bandos chestplate", 300));
+        assertTrue(service.isUnlocked(11832));
+
+        service.relock(11832);
+        assertFalse(service.isUnlocked(11832));
+
+        // The new purchase pair gets generation-suffixed ids, so it does not
+        // collide with (and lose to) the tombstoned original purchase.
+        assertEquals(PurchaseResult.SUCCESS, service.purchase(11832, "Bandos chestplate", 300));
+        assertTrue(service.isUnlocked(11832));
+        assertEquals(400, service.getPooledGrit()); // charged both times, no refund on relock
+    }
+
+    @Test
+    public void relockedPurchaseHistoryConvergesForLatecomers() {
+        // A peer that was offline for the whole purchase -> relock -> repurchase
+        // history must converge to "unlocked" regardless of merge order.
+        List<TbEventRecord> history = Arrays.asList(
+                unlock("purchase-4151", 4151, "Matt", 1000, UnlockSource.PURCHASE, 300),
+                grit("purchase-grit-4151", "Matt", 1000, -300, GritReason.PURCHASE, null),
+                relockEvent("r1", 4151, "Matt", 2000),
+                unlock("purchase-4151-g1", 4151, "Alice", 3000, UnlockSource.PURCHASE, 300),
+                grit("purchase-grit-4151-g1", "Alice", 3000, -300, GritReason.PURCHASE, null));
+
+        service.mergeRemote(history);
+        assertTrue(service.isUnlocked(4151));
+        assertEquals("Alice", service.getUnlockedItems().get(4151).getPlayer());
+        assertEquals(-600, service.getPooledGrit());
+
+        // Reversed order converges identically.
+        GroupStateService other = new GroupStateService(
+                new TbEventStore(new Gson(), new File(tmp.getRoot(), "reversed")), sessionState);
+        other.initialize("reversedgroup");
+        for (int i = history.size() - 1; i >= 0; i--) {
+            other.mergeRemote(Collections.singletonList(history.get(i)));
+        }
+        assertTrue(other.isUnlocked(4151));
+        assertEquals("Alice", other.getUnlockedItems().get(4151).getPlayer());
+    }
+
+    @Test
+    public void purchaseSurvivesRelockWithFutureTimestamp() {
+        // A teammate's relock can carry a createdOn ahead of our clock. A
+        // deliberate re-purchase is stamped after it instead of being
+        // instantly tombstoned with its spend orphaned.
+        service.mergeRemote(Collections.singletonList(
+                relockEvent("r1", 11832, "Alice", System.currentTimeMillis() + 120_000)));
+        service.addAdminGrit(1000);
+
+        assertEquals(PurchaseResult.SUCCESS, service.purchase(11832, "Bandos chestplate", 300));
+        assertTrue(service.isUnlocked(11832));
+        assertEquals(700, service.getPooledGrit());
+    }
+
+    @Test
+    public void divergedGenerationPurchaseRaceRefundsLoser() {
+        // Peers whose relock histories diverged mint non-colliding purchase
+        // ids for the same item. The projection settles it: only the winning
+        // unlock's spend counts, so the pool is charged once.
+        List<TbEventRecord> history = Arrays.asList(
+                relockEvent("r1", 4151, "Matt", 2000),
+                unlock("purchase-4151-g1", 4151, "Alice", 3000, UnlockSource.PURCHASE, 300),
+                grit("purchase-grit-4151-g1", "Alice", 3000, -300, GritReason.PURCHASE, null),
+                // Matt never merged r1: stale generation-0 ids, later stamp.
+                unlock("purchase-4151", 4151, "Matt", 3500, UnlockSource.PURCHASE, 300),
+                grit("purchase-grit-4151", "Matt", 3500, -300, GritReason.PURCHASE, null));
+
+        service.mergeRemote(history);
+        assertTrue(service.isUnlocked(4151));
+        assertEquals("Alice", service.getUnlockedItems().get(4151).getPlayer());
+        assertEquals(-300, service.getPooledGrit());
+        assertEquals(0, service.getGritBalance("Matt"));
+
+        // Reversed order converges identically.
+        GroupStateService other = new GroupStateService(
+                new TbEventStore(new Gson(), new File(tmp.getRoot(), "diverged")), sessionState);
+        other.initialize("divergedgroup");
+        for (int i = history.size() - 1; i >= 0; i--) {
+            other.mergeRemote(Collections.singletonList(history.get(i)));
+        }
+        assertEquals(-300, other.getPooledGrit());
+        assertEquals("Alice", other.getUnlockedItems().get(4151).getPlayer());
+    }
+
+    @Test
+    public void dropBeatingPurchaseRefundsTheSpend() {
+        // A drop that merges with an earlier stamp takes the item; paying
+        // for what the group already found by drop is refunded by omission.
+        service.mergeRemote(Arrays.asList(
+                unlock("purchase-4151", 4151, "Matt", 2000, UnlockSource.PURCHASE, 300),
+                grit("purchase-grit-4151", "Matt", 2000, -300, GritReason.PURCHASE, null)));
+        assertEquals(-300, service.getPooledGrit());
+
+        service.mergeRemote(Collections.singletonList(
+                unlock("u-drop", 4151, "Alice", 1000, UnlockSource.DROP, null)));
+        assertEquals("Alice", service.getUnlockedItems().get(4151).getPlayer());
+        assertEquals(0, service.getPooledGrit());
+    }
+
+    @Test
+    public void sameMillisecondRelockTombstonesTheUnlock() {
+        service.mergeRemote(Collections.singletonList(
+                unlock("u1", 11832, "Matt", 2000, UnlockSource.DROP, null)));
+        service.mergeRemote(Collections.singletonList(relockEvent("r1", 11832, "Matt", 2000)));
+        assertFalse(service.isUnlocked(11832));
+    }
+
+    @Test
     public void earliestDropWinsAttribution() {
         service.mergeRemote(Arrays.asList(
                 unlock("u1", 20997, "Matt", 2000, UnlockSource.DROP, null),

@@ -104,9 +104,12 @@ public class ClogHighlightOverlay extends Overlay {
                     }
                 }
             }
+            // Enforcement's view: an item can also be effectively unlocked
+            // through a recipe (Onyx via Uncut onyx) with no event to show.
+            boolean isUnlocked = unlock != null || !locked.isLocked(itemId);
             // Outline the item sprite itself (quantity 1 so stack digits are
             // not outlined too): green = group-unlocked, red = locked.
-            Color outline = unlock != null ? UNLOCKED_OUTLINE : LOCKED_OUTLINE;
+            Color outline = isUnlocked ? UNLOCKED_OUTLINE : LOCKED_OUTLINE;
             graphics.drawImage(itemManager.getItemOutline(itemId, 1, outline),
                     bounds.x, bounds.y, null);
 
@@ -114,6 +117,8 @@ public class ClogHighlightOverlay extends Overlay {
                 String name = clogData.getItemName(itemId);
                 if (unlock != null) {
                     tooltipManager.add(new Tooltip(name + "</br>Unlocked by " + unlock.getPlayer()));
+                } else if (isUnlocked) {
+                    tooltipManager.add(new Tooltip(name + "</br>Unlocked via a related unlock"));
                 } else {
                     tooltipManager.add(new Tooltip(name + "</br>Locked - right-click to unlock for "
                             + gritService.getPrice(itemId) + " Grit</br>Pooled Grit: " + groupState.getPooledGrit()));

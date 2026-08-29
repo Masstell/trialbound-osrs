@@ -102,7 +102,10 @@ public class DerivedItemRegistry {
                     requires = requiresByProductName.get(ClogText.normalize(name.substring(0, paren)));
                 }
             }
-            if (requires != null && !clogData.isClogItem(id)) {
+            // Clog-item products are included too: a refined clog identity
+            // (Onyx) carries the recipe that lets crafting it from unlocked
+            // clog items (Uncut onyx) count as unlocked in LockedItemHelper.
+            if (requires != null) {
                 // A single-ingredient "recipe" whose ingredient shares the
                 // product's variation family is a charge transition (Uncharged
                 // trident -> Trident of the seas), not a real derivation; the

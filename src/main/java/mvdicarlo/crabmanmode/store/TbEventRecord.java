@@ -18,7 +18,14 @@ import lombok.ToString;
  * Purchases use deterministic ids (purchase-&lt;itemId&gt; and
  * purchase-grit-&lt;itemId&gt;), so two members racing to buy the same unlock
  * produce colliding ids and every peer deterministically keeps one winner -
- * the loser's spend disappears with its event (automatic refund).
+ * the loser's spend disappears with its event (automatic refund). The ids
+ * carry the item's relock generation (-g&lt;n&gt; after n relocks) so a
+ * purchase made after a relock never collides with the tombstoned one.
+ * Racing purchases whose generations diverge (peers with different relock
+ * subsets) don't collide; those are settled in the projection instead: a
+ * spend whose paired unlock lost the item to another unlock event does not
+ * count (see GroupStateService). A spend orphaned by a relock that merged
+ * mid-purchase is compensated with a purchase-refund-&lt;itemId&gt; event.
  */
 @Getter
 @ToString
@@ -73,14 +80,45 @@ public class TbEventRecord {
                 itemId, itemName, UnlockSource.DROP, null, null, null, null, null);
     }
 
-    public static TbEventRecord unlockPurchase(int itemId, String itemName, String player, int cost, long now) {
-        return new TbEventRecord("purchase-" + itemId, TbEventKind.UNLOCK, player, now,
+    public static TbEventRecord unlockPurchase(int itemId, String itemName, String player, int cost, long now,
+            int relockGeneration) {
+        return new TbEventRecord(purchaseId("purchase-", itemId, relockGeneration), TbEventKind.UNLOCK, player, now,
                 itemId, itemName, UnlockSource.PURCHASE, cost, null, null, null, null);
     }
 
-    public static TbEventRecord purchaseSpend(int itemId, String player, int cost, long now) {
-        return new TbEventRecord("purchase-grit-" + itemId, TbEventKind.GRIT, player, now,
+    public static TbEventRecord purchaseSpend(int itemId, String player, int cost, long now, int relockGeneration) {
+        return new TbEventRecord(purchaseSpendId(itemId, relockGeneration), TbEventKind.GRIT, player, now,
                 itemId, null, null, null, -cost, GritReason.PURCHASE, null, null);
+    }
+
+    /**
+     * Compensates a purchase spend whose unlock was tombstoned by a relock
+     * that merged mid-purchase. Deterministic id: conflicted buyers of the
+     * same item generation collide, matching the single surviving spend.
+     */
+    public static TbEventRecord purchaseRefund(int itemId, String player, int cost, long now, int relockGeneration) {
+        return new TbEventRecord(purchaseId("purchase-refund-", itemId, relockGeneration), TbEventKind.GRIT, player,
+                now, itemId, null, null, null, cost, GritReason.REFUND, null, null);
+    }
+
+    /** Generation 0 keeps the historical id format so existing stores merge cleanly. */
+    private static String purchaseId(String prefix, int itemId, int relockGeneration) {
+        return relockGeneration == 0 ? prefix + itemId : prefix + itemId + "-g" + relockGeneration;
+    }
+
+    private static final String SPEND_ID_PREFIX = "purchase-grit-";
+
+    static String purchaseSpendId(int itemId, int relockGeneration) {
+        return purchaseId(SPEND_ID_PREFIX, itemId, relockGeneration);
+    }
+
+    /** The paired unlock event id for a purchase spend, or null for any other event. */
+    static String pairedUnlockId(TbEventRecord event) {
+        if (event.kind != TbEventKind.GRIT || event.reason != GritReason.PURCHASE
+                || event.id == null || !event.id.startsWith(SPEND_ID_PREFIX)) {
+            return null;
+        }
+        return "purchase-" + event.id.substring(SPEND_ID_PREFIX.length());
     }
 
     public static TbEventRecord trialGrit(int itemId, String player, int delta, String trialKey,
