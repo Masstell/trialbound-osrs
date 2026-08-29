@@ -44,7 +44,7 @@ EXCLUDED_MATERIALS = {
     "Burnt page", "Gryphon feather", "Smithing catalyst", "Ent branch",
     "Broken antler", "Ray barbs", "Golden tench", "Star fragment",
     "Blue firelighter", "Green firelighter", "Red firelighter",
-    "Purple firelighter", "White firelighter", "Onyx", "Granite dust",
+    "Purple firelighter", "White firelighter", "Granite dust",
     "Araxyte venom sac", "Nihil shard", "Guardian's eye", "Eternal gem",
     "Imbued heart", "Dragon nails", "Dragon metal sheet", "Log brace",
     "Anima-infused bark", "Felling axe handle", "Zalcano shard",
@@ -192,11 +192,15 @@ def main():
             requirements[product] = set(valid)
         else:
             print(f"WARNING: manual extra '{product}' has no valid clog requirements")
+    manual_products = set(MANUAL_EXTRAS)
     changed = True
     while changed:
         changed = False
         for page, page_recipes in recipes.items():
-            if page in requirements or excluded_product(page) or normalize(page) in clog_names:
+            # Manual seeds are authoritative; everything else is recomputed
+            # every pass so requirements GROW as upstream chains resolve
+            # (a product must never freeze before its materials are gated).
+            if page in manual_products or excluded_product(page) or normalize(page) in clog_names:
                 continue
             roots, all_gated = set(), True
             for mats in page_recipes:
@@ -211,7 +215,7 @@ def main():
                     all_gated = False
                     break
                 roots.update(recipe_roots)
-            if all_gated and roots:
+            if all_gated and roots and requirements.get(page) != roots:
                 requirements[page] = roots
                 changed = True
 
