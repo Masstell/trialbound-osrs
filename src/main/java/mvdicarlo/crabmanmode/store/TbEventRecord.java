@@ -18,7 +18,9 @@ import lombok.ToString;
  * Purchases use deterministic ids (purchase-&lt;itemId&gt; and
  * purchase-grit-&lt;itemId&gt;), so two members racing to buy the same unlock
  * produce colliding ids and every peer deterministically keeps one winner -
- * the loser's spend disappears with its event (automatic refund).
+ * the loser's spend disappears with its event (automatic refund). The ids
+ * carry the item's relock generation (-g&lt;n&gt; after n relocks) so a
+ * purchase made after a relock never collides with the tombstoned one.
  */
 @Getter
 @ToString
@@ -73,14 +75,20 @@ public class TbEventRecord {
                 itemId, itemName, UnlockSource.DROP, null, null, null, null, null);
     }
 
-    public static TbEventRecord unlockPurchase(int itemId, String itemName, String player, int cost, long now) {
-        return new TbEventRecord("purchase-" + itemId, TbEventKind.UNLOCK, player, now,
+    public static TbEventRecord unlockPurchase(int itemId, String itemName, String player, int cost, long now,
+            int relockGeneration) {
+        return new TbEventRecord(purchaseId("purchase-", itemId, relockGeneration), TbEventKind.UNLOCK, player, now,
                 itemId, itemName, UnlockSource.PURCHASE, cost, null, null, null, null);
     }
 
-    public static TbEventRecord purchaseSpend(int itemId, String player, int cost, long now) {
-        return new TbEventRecord("purchase-grit-" + itemId, TbEventKind.GRIT, player, now,
+    public static TbEventRecord purchaseSpend(int itemId, String player, int cost, long now, int relockGeneration) {
+        return new TbEventRecord(purchaseId("purchase-grit-", itemId, relockGeneration), TbEventKind.GRIT, player, now,
                 itemId, null, null, null, -cost, GritReason.PURCHASE, null, null);
+    }
+
+    /** Generation 0 keeps the historical id format so existing stores merge cleanly. */
+    private static String purchaseId(String prefix, int itemId, int relockGeneration) {
+        return relockGeneration == 0 ? prefix + itemId : prefix + itemId + "-g" + relockGeneration;
     }
 
     public static TbEventRecord trialGrit(int itemId, String player, int delta, String trialKey,

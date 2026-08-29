@@ -126,6 +126,7 @@ public class GroupStateService {
         if (!ready) {
             return PurchaseResult.NOT_READY;
         }
+        int generation;
         synchronized (lock) {
             if (unlockedByItem.containsKey(itemId)) {
                 return PurchaseResult.ALREADY_UNLOCKED;
@@ -133,14 +134,28 @@ public class GroupStateService {
             if (pooledGrit < cost) {
                 return PurchaseResult.INSUFFICIENT_GRIT;
             }
+            generation = relockCount(itemId);
         }
         long now = System.currentTimeMillis();
         String player = currentPlayer();
         List<TbEventRecord> batch = new ArrayList<>(2);
-        batch.add(TbEventRecord.unlockPurchase(itemId, itemName, player, cost, now));
-        batch.add(TbEventRecord.purchaseSpend(itemId, player, cost, now));
+        batch.add(TbEventRecord.unlockPurchase(itemId, itemName, player, cost, now, generation));
+        batch.add(TbEventRecord.purchaseSpend(itemId, player, cost, now, generation));
         apply(batch, false);
-        return PurchaseResult.SUCCESS;
+        synchronized (lock) {
+            return unlockedByItem.containsKey(itemId) ? PurchaseResult.SUCCESS : PurchaseResult.CONFLICT;
+        }
+    }
+
+    /** How many times the item has been relocked; the purchase-id generation. */
+    private int relockCount(int itemId) {
+        int count = 0;
+        for (TbEventRecord event : events.values()) {
+            if (event.getKind() == TbEventKind.RELOCK && event.getItemId() != null && event.getItemId() == itemId) {
+                count++;
+            }
+        }
+        return count;
     }
 
     public void addTrialGrit(int itemId, int delta, String trialKey, int multiplierPercent) {
@@ -327,8 +342,10 @@ public class GroupStateService {
             if (event.getKind() != TbEventKind.UNLOCK) {
                 continue;
             }
+            // Strictly earlier only: a re-unlock landing on the exact relock
+            // millisecond (relock then immediate re-purchase) must survive.
             Long relock = relockAt.get(event.getItemId());
-            if (relock != null && event.getCreatedOn() <= relock) {
+            if (relock != null && event.getCreatedOn() < relock) {
                 continue; // tombstoned
             }
             unlocks.merge(event.getItemId(), event,

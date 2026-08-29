@@ -60,7 +60,11 @@ MATERIAL_ALIASES = {
 
 # Chains the wiki Recipe bucket does not model (enchanting), seeded into the
 # fixpoint so downstream recipes (slayer helm recolours etc.) resolve too.
+# Also refined clog items (Onyx): the fixpoint skips clog-item products, but
+# the plugin needs the recipe so cutting an unlocked Uncut onyx counts as
+# unlocked - LockedItemHelper resolves clog-to-clog requirements recursively.
 MANUAL_EXTRAS = {
+    "Onyx": ["Uncut onyx"],
     "Slayer helmet": ["Black mask (10)"],
     "Slayer helmet (i)": ["Black mask (10)"],
     "Zenyte": ["Zenyte shard"],
@@ -86,7 +90,7 @@ EXCLUDED_PRODUCTS = {
     "Molch pearl", "Fathom pearl", "Sturdy harness", "Beehive (Construction)",
     "Anti-venom", "Anti-venom+", "Extended anti-venom+", "Forgotten brew",
     "Sunfire rune", "Jug of sunfire wine", "Searing page", "Infernal blend",
-    "Cadantine blood potion (unf)", "Uncut zenyte",
+    "Cadantine blood potion (unf)",
     "Godsword shards 1 & 2", "Godsword shards 1 & 3", "Godsword shards 2 & 3",
     "Bone fragments", "Armadylean plate", "Bandosian components", "Nihil dust",
     "Crystal acorn", "Eternal teleport crystal", "Headless arrow",

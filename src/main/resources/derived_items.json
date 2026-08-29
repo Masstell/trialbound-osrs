@@ -1624,6 +1624,12 @@
       ]
     },
     {
+      "product": "Onyx",
+      "requires": [
+        "Uncut onyx"
+      ]
+    },
+    {
       "product": "Onyx amulet",
       "requires": [
         "Onyx"
@@ -2280,6 +2286,13 @@
       "product": "Ultor ring",
       "requires": [
         "Chromium ingot"
+      ]
+    },
+    {
+      "product": "Uncut zenyte",
+      "requires": [
+        "Onyx",
+        "Zenyte shard"
       ]
     },
     {

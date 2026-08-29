@@ -62,18 +62,50 @@ public class LockedItemHelper {
         return members;
     }
 
+    /** Max recipe hops between clog items (Amulet of fury -> Onyx -> Uncut onyx). */
+    private static final int MAX_DERIVATION_DEPTH = 4;
+
     /**
      * A clog identity counts as unlocked when ANY clog member of its
      * variation family is - an unlock event lands on one specific id, but
      * charging/degrading swaps which id you hold.
      */
-    private boolean clogUnlocked(int clogItemId) {
+    private boolean familyUnlocked(int clogItemId) {
         for (int member : clogGroupMembers(clogItemId)) {
             if (groupState.isUnlocked(member)) {
                 return true;
             }
         }
         return false;
+    }
+
+    /**
+     * Family-aware unlock check that also follows derived recipes between
+     * clog items: a refined clog item crafted from unlocked clog items is
+     * itself unlocked (cutting an unlocked Uncut onyx must not yield a
+     * locked Onyx, and everything requiring Onyx must unlock with it).
+     */
+    private boolean clogUnlocked(int clogItemId) {
+        return clogUnlocked(clogItemId, 0);
+    }
+
+    private boolean clogUnlocked(int clogItemId, int depth) {
+        if (familyUnlocked(clogItemId)) {
+            return true;
+        }
+        if (depth >= MAX_DERIVATION_DEPTH) {
+            return false;
+        }
+        List<Integer> requirements = derived.getRequirements(itemManager.canonicalize(clogItemId));
+        if (requirements.isEmpty()) {
+            return false;
+        }
+        for (int required : requirements) {
+            if (!clogUnlocked(required, depth + 1)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -96,6 +128,14 @@ public class LockedItemHelper {
         int canonical = itemManager.canonicalize(itemId);
         List<Integer> requirements = derived.getRequirements(canonical);
         if (!requirements.isEmpty()) {
+            // A derived product that is ITSELF a clog identity (refined gems:
+            // Onyx from Uncut onyx) is also freed by a direct unlock of its
+            // own family. Non-clog products deliberately skip this - some
+            // share a variation family with one ingredient (toxic staff) and
+            // must not escape their other requirements through it.
+            if (clogData.isClogItem(canonical) && familyUnlocked(canonical)) {
+                return false;
+            }
             for (int required : requirements) {
                 if (!clogUnlocked(required)) {
                     return true;

@@ -6,7 +6,7 @@ package mvdicarlo.crabmanmode;
  * members are called out in chat instead of causing mystery asymmetries.
  */
 public final class TrialboundVersion {
-    public static final String VERSION = "0.3.13";
+    public static final String VERSION = "0.3.14";
 
     private TrialboundVersion() {
     }

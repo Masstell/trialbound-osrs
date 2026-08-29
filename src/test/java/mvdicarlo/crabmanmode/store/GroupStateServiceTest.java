@@ -110,6 +110,49 @@ public class GroupStateServiceTest {
     }
 
     @Test
+    public void repurchaseAfterRelockUnlocksAgain() {
+        service.addAdminGrit(1000);
+        assertEquals(PurchaseResult.SUCCESS, service.purchase(11832, "Bandos chestplate", 300));
+        assertTrue(service.isUnlocked(11832));
+
+        service.relock(11832);
+        assertFalse(service.isUnlocked(11832));
+
+        // The new purchase pair gets generation-suffixed ids, so it does not
+        // collide with (and lose to) the tombstoned original purchase.
+        assertEquals(PurchaseResult.SUCCESS, service.purchase(11832, "Bandos chestplate", 300));
+        assertTrue(service.isUnlocked(11832));
+        assertEquals(400, service.getPooledGrit()); // charged both times, no refund on relock
+    }
+
+    @Test
+    public void relockedPurchaseHistoryConvergesForLatecomers() {
+        // A peer that was offline for the whole purchase -> relock -> repurchase
+        // history must converge to "unlocked" regardless of merge order.
+        List<TbEventRecord> history = Arrays.asList(
+                unlock("purchase-4151", 4151, "Matt", 1000, UnlockSource.PURCHASE, 300),
+                grit("purchase-grit-4151", "Matt", 1000, -300, GritReason.PURCHASE, null),
+                relockEvent("r1", 4151, "Matt", 2000),
+                unlock("purchase-4151-g1", 4151, "Alice", 3000, UnlockSource.PURCHASE, 300),
+                grit("purchase-grit-4151-g1", "Alice", 3000, -300, GritReason.PURCHASE, null));
+
+        service.mergeRemote(history);
+        assertTrue(service.isUnlocked(4151));
+        assertEquals("Alice", service.getUnlockedItems().get(4151).getPlayer());
+        assertEquals(-600, service.getPooledGrit());
+
+        // Reversed order converges identically.
+        GroupStateService other = new GroupStateService(
+                new TbEventStore(new Gson(), new File(tmp.getRoot(), "reversed")), sessionState);
+        other.initialize("reversedgroup");
+        for (int i = history.size() - 1; i >= 0; i--) {
+            other.mergeRemote(Collections.singletonList(history.get(i)));
+        }
+        assertTrue(other.isUnlocked(4151));
+        assertEquals("Alice", other.getUnlockedItems().get(4151).getPlayer());
+    }
+
+    @Test
     public void earliestDropWinsAttribution() {
         service.mergeRemote(Arrays.asList(
                 unlock("u1", 20997, "Matt", 2000, UnlockSource.DROP, null),
