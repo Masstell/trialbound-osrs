@@ -28,10 +28,10 @@ dependencies {
 }
 
 group = 'com.masstell.trialbound'
-version = '0.3.15'
+version = '0.3.16'
 
 application {
-    mainClass = 'mvdicarlo.crabmanmode.CrabmanModePluginTest'
+    mainClass = 'mvdicarlo.trialbound.TrialboundPluginTest'
 }
 
 // Task to run the plugin for testing
@@ -39,7 +39,7 @@ task runPlugin(type: JavaExec) {
     description = 'Run the plugin with RuneLite for testing'
     group = 'application'
     classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'mvdicarlo.crabmanmode.CrabmanModePluginTest'
+    mainClass = 'mvdicarlo.trialbound.TrialboundPluginTest'
     
     // Add JVM arguments if needed
     jvmArgs = ['-ea', '-Xmx512m']

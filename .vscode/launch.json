@@ -5,7 +5,7 @@
             "type": "java",
             "name": "Trialbound (dev client)",
             "request": "launch",
-            "mainClass": "mvdicarlo.crabmanmode.CrabmanModePluginTest",
+            "mainClass": "mvdicarlo.trialbound.TrialboundPluginTest",
             "projectName": "trialbound-osrs",
             "vmArgs": ["-ea"]
         },
