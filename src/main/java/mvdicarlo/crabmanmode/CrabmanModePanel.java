@@ -48,12 +48,13 @@ public class CrabmanModePanel extends PluginPanel {
         setBackground(ColorScheme.DARK_GRAY_COLOR);
         setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 
-        JPanel header = new JPanel(new BorderLayout());
+        JPanel header = new JPanel(new BorderLayout(0, 4));
         header.setBackground(ColorScheme.DARK_GRAY_COLOR);
         JLabel title = new JLabel("Trialbound v" + TrialboundVersion.VERSION);
-        title.setFont(title.getFont().deriveFont(Font.BOLD, 16f));
+        title.setFont(title.getFont().deriveFont(Font.BOLD, 22f));
         header.add(title, BorderLayout.NORTH);
         statusLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+        statusLabel.setFont(statusLabel.getFont().deriveFont(14f));
         header.add(statusLabel, BorderLayout.SOUTH);
 
         JPanel display = new JPanel(new BorderLayout());
@@ -80,7 +81,7 @@ public class CrabmanModePanel extends PluginPanel {
 
     /** Rebuilds the status strip from current plugin state (Swing thread). */
     public void refreshStatus() {
-        StringBuilder sb = new StringBuilder("<html><font size='2'>");
+        StringBuilder sb = new StringBuilder("<html>");
 
         String enabled = sessionState.getEnabledCharacter();
         if (enabled.isEmpty()) {
@@ -125,7 +126,7 @@ public class CrabmanModePanel extends PluginPanel {
             }
         }
 
-        sb.append("</font></html>");
+        sb.append("</html>");
         statusLabel.setText(sb.toString());
     }
 
