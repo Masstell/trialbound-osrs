@@ -345,6 +345,12 @@
       ]
     },
     {
+      "product": "Blessed dizana's quiver",
+      "requires": [
+        "Dizana's quiver (uncharged)"
+      ]
+    },
+    {
       "product": "Blessed spirit shield",
       "requires": [
         "Holy elixir",
@@ -603,6 +609,18 @@
       "product": "Divine rune pouch",
       "requires": [
         "Thread of Elidinis"
+      ]
+    },
+    {
+      "product": "Dizana's max cape",
+      "requires": [
+        "Dizana's quiver (uncharged)"
+      ]
+    },
+    {
+      "product": "Dizana's max hood",
+      "requires": [
+        "Dizana's quiver (uncharged)"
       ]
     },
     {
@@ -1425,6 +1443,13 @@
       ]
     },
     {
+      "product": "Magma helm",
+      "requires": [
+        "Serpentine visage",
+        "Magma mutagen"
+      ]
+    },
+    {
       "product": "Magus ring",
       "requires": [
         "Chromium ingot"
@@ -2088,6 +2113,13 @@
       ]
     },
     {
+      "product": "Tanzanite helm",
+      "requires": [
+        "Serpentine visage",
+        "Tanzanite mutagen"
+      ]
+    },
+    {
       "product": "Tormented bracelet",
       "requires": [
         "Zenyte shard"
@@ -2122,6 +2154,13 @@
       "product": "Toxic blowpipe",
       "requires": [
         "Tanzanite fang"
+      ]
+    },
+    {
+      "product": "Toxic staff (uncharged)",
+      "requires": [
+        "Magic fang",
+        "Staff of the Dead"
       ]
     },
     {
@@ -2286,6 +2325,13 @@
       "product": "Ultor ring",
       "requires": [
         "Chromium ingot"
+      ]
+    },
+    {
+      "product": "Uncharged toxic trident",
+      "requires": [
+        "Magic fang",
+        "Uncharged trident"
       ]
     },
     {

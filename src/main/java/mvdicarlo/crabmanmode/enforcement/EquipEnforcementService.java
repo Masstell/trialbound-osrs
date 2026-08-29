@@ -15,6 +15,8 @@ import net.runelite.api.Client;
 import net.runelite.api.MenuEntry;
 import net.runelite.api.events.MenuEntryAdded;
 import net.runelite.api.events.MenuOptionClicked;
+import net.runelite.api.gameval.InterfaceID;
+import net.runelite.api.widgets.Widget;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.game.ItemManager;
 
@@ -71,6 +73,16 @@ public class EquipEnforcementService {
         return config.enforceEquipBlock() && locked.enforcementActive();
     }
 
+    /**
+     * Widgets that merely DISPLAY an item as an icon without the player
+     * holding or using it there. Bank tab icons carry the item id of the
+     * first item in the tab - stripping their options would make whole
+     * bank tabs unclickable whenever that item is locked.
+     */
+    private static boolean displayOnlyWidget(Widget widget) {
+        return widget != null && widget.getId() == InterfaceID.Bankmain.TABS;
+    }
+
     /** True for options that merely move/store/discard/inspect the item. */
     private static boolean allowedOption(String option) {
         if (option == null || ALLOWED_OPTIONS.contains(option)) {
@@ -86,7 +98,8 @@ public class EquipEnforcementService {
 
     @Subscribe
     public void onMenuEntryAdded(MenuEntryAdded event) {
-        if (!active() || allowedOption(event.getOption())) {
+        if (!active() || allowedOption(event.getOption())
+                || displayOnlyWidget(event.getMenuEntry().getWidget())) {
             return;
         }
         int itemId = event.getMenuEntry().getItemId();
@@ -105,7 +118,8 @@ public class EquipEnforcementService {
 
     @Subscribe
     public void onMenuOptionClicked(MenuOptionClicked event) {
-        if (!active() || allowedOption(event.getMenuOption())) {
+        if (!active() || allowedOption(event.getMenuOption())
+                || displayOnlyWidget(event.getMenuEntry().getWidget())) {
             return;
         }
         int itemId = event.getMenuEntry().getItemId();

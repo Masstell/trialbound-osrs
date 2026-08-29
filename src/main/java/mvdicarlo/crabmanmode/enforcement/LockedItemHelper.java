@@ -40,22 +40,33 @@ public class LockedItemHelper {
     }
 
     /**
-     * All clog item ids in the item's variation group, the item itself
-     * included. Charge-state families can carry several clog identities
-     * (Trident of the seas (full) 11905 AND Uncharged trident 11908), and
-     * the clog identity is not always the group's base id (Pharaoh's
-     * sceptre's group base is a legacy pre-rework id; the clog item is the
-     * mid-group "(uncharged)" form) - so the whole group is scanned, never
-     * just the base.
+     * The clog item ids in the item's variation group that are the SAME
+     * logical unlock as the item, the item itself included. Charge-state
+     * families can carry several clog identities (Trident of the seas
+     * (full) 11905 AND Uncharged trident 11908), and the clog identity is
+     * not always the group's base id (Pharaoh's sceptre's group base is a
+     * legacy pre-rework id; the clog item is the mid-group "(uncharged)"
+     * form) - so the whole group is scanned, never just the base.
+     *
+     * <p>Not every family member qualifies: the variation mapping also
+     * groups distinct unlockables - plain "Rune platebody" with the clue
+     * rewards "Rune platebody (g)/(t)/(h1..h5)", "Godsword shard 1" with
+     * shards 2 and 3, Shayzien tiers... {@link ItemIdentity} keeps charge
+     * and degrade states together while separating those.
+     * Client thread only (reads item names).
      */
     public List<Integer> clogGroupMembers(int itemId) {
         int canonical = itemManager.canonicalize(itemId);
+        boolean itemIsClog = clogData.isClogItem(canonical);
+        String itemName = itemIsClog ? clogData.getItemName(canonical)
+                : client.getItemDefinition(canonical).getName();
         List<Integer> members = new ArrayList<>();
-        if (clogData.isClogItem(canonical)) {
+        if (itemIsClog) {
             members.add(canonical);
         }
         for (int variant : ItemVariationMapping.getVariations(ItemVariationMapping.map(canonical))) {
-            if (variant != canonical && clogData.isClogItem(variant)) {
+            if (variant != canonical && clogData.isClogItem(variant)
+                    && ItemIdentity.sharesIdentity(itemName, clogData.getItemName(variant), itemIsClog)) {
                 members.add(variant);
             }
         }
@@ -110,8 +121,9 @@ public class LockedItemHelper {
 
     /**
      * True when the item is locked: its variation family holds a clog
-     * identity the group has not unlocked (any unlocked member frees the
-     * whole family), the clog item its name derives from is locked (ornament
+     * identity of the same logical item the group has not unlocked (any
+     * unlocked charge state frees the item; cosmetic clue variants like
+     * (g)/(t) are separate unlocks), the clog item its name derives from is locked (ornament
      * kits, trouver parchment), or it is crafted from clog items of which
      * any is still locked (blowpipe from Tanzanite fang etc.).
      * Client thread only (reads item names).

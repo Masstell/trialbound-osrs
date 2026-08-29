@@ -45,7 +45,7 @@ public interface CrabmanModeConfig extends Config {
 
     // --- Enforcement ---
 
-    @ConfigItem(keyName = "enforceGeBlock", name = "Block GE for locked items", position = 1, description = "Grey locked collection log items out of GE search and block buy offers for them.", section = enforcementSection)
+    @ConfigItem(keyName = "enforceGeBlock", name = "Block GE for locked items", position = 1, description = "Grey locked collection log items out of GE search and block buy and sell offers for them.", section = enforcementSection)
     default boolean enforceGeBlock() {
         return true;
     }
@@ -80,6 +80,11 @@ public interface CrabmanModeConfig extends Config {
     @ConfigItem(keyName = "showTrialsOverlay", name = "Trials overlay", position = 3, description = "Show the active trials as an on-screen overlay.", section = notificationSection)
     default boolean showTrialsOverlay() {
         return false;
+    }
+
+    @ConfigItem(keyName = "loginSummary", name = "Login unlock summary", position = 6, description = "On login, list the items your group unlocked since you last played this character.", section = notificationSection)
+    default boolean loginSummary() {
+        return true;
     }
 
     @ConfigItem(keyName = "nudgeClogSync", name = "Remind to sync collection log", position = 4, description = "Remind you to open your collection log so Trialbound can read which items you have obtained.", section = notificationSection)

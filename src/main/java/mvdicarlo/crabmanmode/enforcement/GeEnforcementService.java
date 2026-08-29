@@ -20,13 +20,15 @@ import net.runelite.client.eventbus.Subscribe;
 
 /**
  * Hard GE block for locked collection log items: search results are greyed
- * out/hidden, and buy-offer confirmation is consumed as a backstop for any
- * path that still reaches the offer screen.
+ * out/hidden, sell offers can't be started from the side inventory, and
+ * offer confirmation is consumed as a backstop for any path that still
+ * reaches the offer screen (buy or sell).
  */
 @Slf4j
 @Singleton
 public class GeEnforcementService {
     private static final int GE_OFFER_TYPE_BUY = 0;
+    private static final int GE_OFFER_TYPE_SELL = 1;
 
     private final Client client;
     private final CrabmanModeConfig config;
@@ -93,27 +95,41 @@ public class GeEnforcementService {
             warnedOfferItem = -1;
             return;
         }
-        int offerItem = currentBuyOfferItem();
+        int offerItem = currentOfferItem();
         if (offerItem <= 0 || !locked.isLocked(offerItem)) {
             warnedOfferItem = -1;
             return;
         }
         if (warnedOfferItem != offerItem) {
             warnedOfferItem = offerItem;
-            chat.send("Trialbound: " + client.getItemDefinition(offerItem).getName()
-                    + " is locked - obtain it as a drop or buy the unlock with Grit.");
+            String name = client.getItemDefinition(offerItem).getName();
+            if (isSellOffer()) {
+                chat.send("Trialbound: " + name + " is locked - you can't sell it until it's unlocked.");
+            } else {
+                chat.send("Trialbound: " + name
+                        + " is locked - obtain it as a drop or buy the unlock with Grit.");
+            }
         }
     }
 
-    /** The item in the current NEW BUY offer, or -1. */
-    private int currentBuyOfferItem() {
-        if (client.getVarbitValue(VarbitID.GE_NEWOFFER_TYPE) != GE_OFFER_TYPE_BUY) {
+    private boolean isSellOffer() {
+        return client.getVarbitValue(VarbitID.GE_NEWOFFER_TYPE) == GE_OFFER_TYPE_SELL;
+    }
+
+    /** The item in the current new offer (buy or sell), or -1. */
+    private int currentOfferItem() {
+        int type = client.getVarbitValue(VarbitID.GE_NEWOFFER_TYPE);
+        if (type != GE_OFFER_TYPE_BUY && type != GE_OFFER_TYPE_SELL) {
             return -1;
         }
         return client.getVarpValue(VarPlayerID.TRADINGPOST_SEARCH);
     }
 
-    /** Backstop: consume Confirm on a locked buy offer and clicks on locked search rows. */
+    /**
+     * Backstop: consume Confirm on a locked offer, clicks on locked search
+     * rows, and Offer clicks on locked items in the GE side inventory (the
+     * path that starts a sell).
+     */
     @Subscribe
     public void onMenuOptionClicked(MenuOptionClicked event) {
         if (!active()) {
@@ -125,19 +141,29 @@ public class GeEnforcementService {
         }
         int interfaceId = WidgetUtil.componentToInterface(widget.getId());
         if (interfaceId == InterfaceID.GE_OFFERS && "Confirm".equals(event.getMenuOption())) {
-            int offerItem = currentBuyOfferItem();
+            int offerItem = currentOfferItem();
             if (offerItem > 0 && locked.isLocked(offerItem)) {
                 event.consume();
-                chat.send("Trialbound blocked that purchase: "
+                chat.send("Trialbound blocked that " + (isSellOffer() ? "sale" : "purchase") + ": "
                         + client.getItemDefinition(offerItem).getName() + " is locked.");
             }
             return;
         }
-        // Clicks inside the GE search result list on a locked item.
         int itemId = event.getMenuEntry().getItemId();
-        if (itemId > 0 && widget.getId() == InterfaceID.Chatbox.MES_LAYER_SCROLLCONTENTS
-                && locked.isLocked(itemId)) {
+        if (itemId <= 0 || !locked.isLocked(itemId)) {
+            return;
+        }
+        // Clicks inside the GE search result list on a locked item.
+        if (widget.getId() == InterfaceID.Chatbox.MES_LAYER_SCROLLCONTENTS) {
             event.consume();
+            return;
+        }
+        // Starting a sell offer from the GE side inventory.
+        if (widget.getId() == InterfaceID.GeOffersSide.ITEMS
+                && event.getMenuOption() != null && event.getMenuOption().startsWith("Offer")) {
+            event.consume();
+            chat.send("Trialbound: " + client.getItemDefinition(itemId).getName()
+                    + " is locked - you can't sell it until it's unlocked.");
         }
     }
 }

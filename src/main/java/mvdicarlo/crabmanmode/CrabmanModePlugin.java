@@ -169,6 +169,9 @@ public class CrabmanModePlugin extends Plugin {
     private UnlockAnnouncer unlockAnnouncer;
 
     @Inject
+    private LoginUnlockSummary loginUnlockSummary;
+
+    @Inject
     private mvdicarlo.crabmanmode.grit.GritService gritService;
 
     @Inject
@@ -339,6 +342,7 @@ public class CrabmanModePlugin extends Plugin {
         clientToolbar.addNavigation(navButton);
         loadResources();
         groupState.addListener(groupStateListener);
+        groupState.addListener(loginUnlockSummary);
         initializeGroupState();
 
         overlayManager.add(CrabmanModeOverlay);
@@ -361,6 +365,7 @@ public class CrabmanModePlugin extends Plugin {
         eventBus.register(derivedItemRegistry);
         eventBus.register(shopAcquisitionService);
         eventBus.register(clogMenuService);
+        eventBus.register(loginUnlockSummary);
         overlayManager.add(tradeWarningOverlay);
         overlayManager.add(lockedItemOverlay);
         overlayManager.add(clogHighlightOverlay);
@@ -388,6 +393,7 @@ public class CrabmanModePlugin extends Plugin {
     protected void shutDown() throws Exception {
         super.shutDown();
         groupState.removeListener(groupStateListener);
+        groupState.removeListener(loginUnlockSummary);
         groupState.close();
         overlayManager.remove(CrabmanModeOverlay);
         chatCommandManager.unregisterCommand(TB_UNLOCKS_STRING);
@@ -408,6 +414,7 @@ public class CrabmanModePlugin extends Plugin {
         eventBus.unregister(derivedItemRegistry);
         eventBus.unregister(shopAcquisitionService);
         eventBus.unregister(clogMenuService);
+        eventBus.unregister(loginUnlockSummary);
         overlayManager.remove(tradeWarningOverlay);
         overlayManager.remove(lockedItemOverlay);
         overlayManager.remove(clogHighlightOverlay);
