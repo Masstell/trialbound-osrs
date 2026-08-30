@@ -84,41 +84,51 @@ public class ClogHighlightOverlay extends Overlay {
         Map<Integer, TbEventRecord> unlocked = groupState.getUnlockedItems();
         Point mouse = client.getMouseCanvasPosition();
 
-        for (Widget child : children) {
-            if (child == null || child.isHidden() || child.getItemId() <= 0) {
-                continue;
-            }
-            int itemId = itemManager.canonicalize(child.getItemId());
-            if (!clogData.isClogItem(itemId)) {
-                continue;
-            }
-            Rectangle bounds = child.getBounds();
-            TbEventRecord unlock = unlocked.get(itemId);
-            if (unlock == null) {
-                // The unlock event may live on another charge state of the
-                // same family (Uncharged trident vs the (full) clog entry).
-                for (int member : locked.clogGroupMembers(itemId)) {
-                    unlock = unlocked.get(member);
+        // Long pages (Hard/Elite clues etc.) scroll their item slots past the
+        // visible list - the widgets themselves stay unhidden, just moved
+        // off-screen, so without a clip our outlines bleed past the panel.
+        java.awt.Shape previousClip = graphics.getClip();
+        graphics.setClip(container.getBounds());
+        try {
+            for (Widget child : children) {
+                if (child == null || child.isHidden() || child.getItemId() <= 0) {
+                    continue;
+                }
+                int itemId = itemManager.canonicalize(child.getItemId());
+                if (!clogData.isClogItem(itemId)) {
+                    continue;
+                }
+                Rectangle bounds = child.getBounds();
+                TbEventRecord unlock = unlocked.get(itemId);
+                if (unlock == null) {
+                    // The unlock event may live on another charge state of the
+                    // same family (Uncharged trident vs the (full) clog entry).
+                    for (int member : locked.clogGroupMembers(itemId)) {
+                        unlock = unlocked.get(member);
+                        if (unlock != null) {
+                            break;
+                        }
+                    }
+                }
+                // Outline the item sprite itself (quantity 1 so stack digits are
+                // not outlined too): green = group-unlocked, red = locked.
+                Color outline = unlock != null ? UNLOCKED_OUTLINE : LOCKED_OUTLINE;
+                graphics.drawImage(itemManager.getItemOutline(itemId, 1, outline),
+                        bounds.x, bounds.y, null);
+
+                if (bounds.contains(mouse.getX(), mouse.getY())) {
+                    String name = clogData.getItemName(itemId);
                     if (unlock != null) {
-                        break;
+                        tooltipManager.add(new Tooltip(name + "</br>Unlocked by " + unlock.getPlayer()));
+                    } else {
+                        tooltipManager.add(new Tooltip(name + "</br>Locked - right-click to unlock for "
+                                + gritService.getPrice(itemId) + " Grit</br>Pooled Grit: "
+                                + groupState.getPooledGrit()));
                     }
                 }
             }
-            // Outline the item sprite itself (quantity 1 so stack digits are
-            // not outlined too): green = group-unlocked, red = locked.
-            Color outline = unlock != null ? UNLOCKED_OUTLINE : LOCKED_OUTLINE;
-            graphics.drawImage(itemManager.getItemOutline(itemId, 1, outline),
-                    bounds.x, bounds.y, null);
-
-            if (bounds.contains(mouse.getX(), mouse.getY())) {
-                String name = clogData.getItemName(itemId);
-                if (unlock != null) {
-                    tooltipManager.add(new Tooltip(name + "</br>Unlocked by " + unlock.getPlayer()));
-                } else {
-                    tooltipManager.add(new Tooltip(name + "</br>Locked - right-click to unlock for "
-                            + gritService.getPrice(itemId) + " Grit</br>Pooled Grit: " + groupState.getPooledGrit()));
-                }
-            }
+        } finally {
+            graphics.setClip(previousClip);
         }
         return null;
     }

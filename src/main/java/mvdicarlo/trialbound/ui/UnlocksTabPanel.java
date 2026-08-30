@@ -109,9 +109,9 @@ public class UnlocksTabPanel extends JPanel {
 
     public void refresh() {
         String me = sessionState.getCurrentCharacter();
-        int mine = me.isEmpty() ? 0 : groupState.getGritBalance(me);
-        gritHeader.setText("<html><b><font color='#ffc83c'>Grit: " + mine + " yours &middot; "
-                + groupState.getPooledGrit() + " pooled</font></b></html>");
+        int mine = me.isEmpty() ? 0 : groupState.getGritEarned(me);
+        gritHeader.setText("<html><b><font color='#ffc83c'>Personal Grit Earned: " + mine
+                + " &middot; Group Grit Earned: " + groupState.getPooledGrit() + "</font></b></html>");
 
         if (!clogData.isLoaded()) {
             grid.removeAll();

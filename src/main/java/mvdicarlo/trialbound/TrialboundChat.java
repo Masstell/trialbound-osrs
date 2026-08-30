@@ -32,6 +32,11 @@ public class TrialboundChat {
         queue(builder.append(suffix));
     }
 
+    /** Sends a message built with custom colors/icons (e.g. gold username, green body text). */
+    public void send(ChatMessageBuilder builder) {
+        queue(builder);
+    }
+
     private void queue(ChatMessageBuilder builder) {
         chatMessageManager.queue(QueuedMessage.builder()
                 .type(ChatMessageType.CONSOLE)

@@ -1,5 +1,6 @@
 package mvdicarlo.trialbound;
 
+import java.awt.Color;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -11,9 +12,13 @@ import javax.inject.Singleton;
 
 import mvdicarlo.trialbound.store.TbEventRecord;
 import mvdicarlo.trialbound.store.UnlockSource;
+import net.runelite.api.Client;
+import net.runelite.api.IndexedSprite;
 import net.runelite.client.callback.ClientThread;
+import net.runelite.client.chat.ChatMessageBuilder;
 import net.runelite.client.game.ChatIconManager;
 import net.runelite.client.game.ItemManager;
+import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.util.AsyncBufferedImage;
 import net.runelite.client.util.ImageUtil;
 
@@ -27,16 +32,24 @@ public class UnlockAnnouncer {
     private static final int ICON_WIDTH = 18;
     private static final int ICON_HEIGHT = 16;
 
+    /** Matches the Grit-gold used elsewhere in the panel. */
+    private static final Color GOLD = new Color(0xff, 0xc8, 0x3c);
+    private static final Color GREEN = ColorScheme.PROGRESS_COMPLETE_COLOR;
+
+    private final Client client;
     private final ItemManager itemManager;
     private final ChatIconManager chatIconManager;
     private final ClientThread clientThread;
     private final TrialboundChat chat;
 
     private final Map<Integer, Integer> iconIdByItem = new ConcurrentHashMap<>();
+    /** Registered once, lazily, on first announcement; -1 until then. Client thread only. */
+    private int badgeIconId = -1;
 
     @Inject
-    public UnlockAnnouncer(ItemManager itemManager, ChatIconManager chatIconManager, ClientThread clientThread,
-            TrialboundChat chat) {
+    public UnlockAnnouncer(Client client, ItemManager itemManager, ChatIconManager chatIconManager,
+            ClientThread clientThread, TrialboundChat chat) {
+        this.client = client;
         this.itemManager = itemManager;
         this.chatIconManager = chatIconManager;
         this.clientThread = clientThread;
@@ -44,20 +57,70 @@ public class UnlockAnnouncer {
     }
 
     public void announce(TbEventRecord unlock) {
-        String prefix;
+        String middle;
         String suffix;
         if (unlock.getSource() == UnlockSource.PURCHASE) {
-            prefix = unlock.getPlayer() + " has purchased an unlock: ";
+            middle = " has purchased an unlock: ";
             suffix = unlock.getItemName() + " (" + unlock.getCost() + " Grit).";
         } else {
-            prefix = unlock.getPlayer() + " has unlocked a new item: ";
+            middle = " has unlocked a new item: ";
             suffix = unlock.getItemName() + ".";
         }
-        sendWithItemIcon(unlock.getItemId(), prefix, suffix);
+        sendUnlock(unlock.getPlayer(), middle, unlock.getItemId(), suffix);
     }
 
     public void announceRelock(int itemId, String itemName) {
         sendWithItemIcon(itemId, "Re-locked: ", itemName + ".");
+    }
+
+    /**
+     * The Trialbound badge next to the gold username, then the rest of the
+     * message in green with the item's icon inlined before its name. Like
+     * {@link #sendWithItemIcon}, the item icon is best-effort: if it hasn't
+     * loaded within 3 s the message goes out without it.
+     */
+    private void sendUnlock(String player, String middleText, int itemId, String suffix) {
+        AtomicBoolean sent = new AtomicBoolean();
+        AsyncBufferedImage image = itemManager.getImage(itemId);
+        image.onLoaded(() -> {
+            int itemIconId = iconIdByItem.computeIfAbsent(itemId, k -> chatIconManager
+                    .registerChatIcon(ImageUtil.resizeImage(image, ICON_WIDTH, ICON_HEIGHT)));
+            clientThread.invokeLater(() -> {
+                if (sent.compareAndSet(false, true)) {
+                    chat.send(buildUnlockMessage(player, middleText,
+                            chatIconManager.chatIconIndex(itemIconId), suffix));
+                }
+            });
+        });
+        CompletableFuture.delayedExecutor(3, TimeUnit.SECONDS).execute(() -> {
+            if (sent.compareAndSet(false, true)) {
+                clientThread.invokeLater(() -> chat.send(buildUnlockMessage(player, middleText, -1, suffix)));
+            }
+        });
+    }
+
+    private ChatMessageBuilder buildUnlockMessage(String player, String middleText, int itemIconIndex,
+            String suffix) {
+        ChatMessageBuilder builder = new ChatMessageBuilder();
+        if (badgeIconId == -1) {
+            badgeIconId = chatIconManager.registerChatIcon(TrialboundPlugin.chatBadgeImage());
+        }
+        int badgeIndex = chatIconManager.chatIconIndex(badgeIconId);
+        if (badgeIndex >= 0) {
+            // ChatIconManager doesn't expose sprite offsets itself; reach into
+            // the mod icon it registered to nudge it vertically centered,
+            // same as the always-on name badge in TrialboundPlugin.
+            IndexedSprite[] modIcons = client.getModIcons();
+            if (modIcons != null && badgeIndex < modIcons.length && modIcons[badgeIndex] != null) {
+                modIcons[badgeIndex].setOffsetY(TrialboundPlugin.BADGE_OFFSET_Y);
+            }
+            builder.img(badgeIndex).append(" ");
+        }
+        builder.append(GOLD, player).append(GREEN, middleText);
+        if (itemIconIndex >= 0) {
+            builder.img(itemIconIndex);
+        }
+        return builder.append(GREEN, suffix);
     }
 
     /**

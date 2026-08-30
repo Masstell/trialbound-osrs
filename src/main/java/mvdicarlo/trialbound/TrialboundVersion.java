@@ -6,7 +6,7 @@ package mvdicarlo.trialbound;
  * members are called out in chat instead of causing mystery asymmetries.
  */
 public final class TrialboundVersion {
-    public static final String VERSION = "0.3.16";
+    public static final String VERSION = "0.3.17";
 
     private TrialboundVersion() {
     }

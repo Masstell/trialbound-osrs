@@ -44,6 +44,7 @@ public class GroupStateService {
     private Map<String, TbEventRecord> events = new HashMap<>();
     private Map<Integer, TbEventRecord> unlockedByItem = new HashMap<>();
     private Map<String, Integer> balances = new HashMap<>();
+    private Map<String, Integer> earnedByPlayer = new HashMap<>();
     private int pooledGrit;
     private volatile boolean ready;
 
@@ -215,6 +216,17 @@ public class GroupStateService {
         }
     }
 
+    /**
+     * Lifetime grit this player has personally earned from trial drops/admin
+     * credits - purchases are paid from the shared pool, not this player's
+     * own earnings, so spending never reduces it and it's never negative.
+     */
+    public int getGritEarned(String player) {
+        synchronized (lock) {
+            return earnedByPlayer.getOrDefault(player, 0);
+        }
+    }
+
     public Map<String, Integer> getBalancesByPlayer() {
         synchronized (lock) {
             return new HashMap<>(balances);
@@ -353,6 +365,7 @@ public class GroupStateService {
         }
 
         Map<String, Integer> newBalances = new HashMap<>();
+        Map<String, Integer> newEarned = new HashMap<>();
         int pooled = 0;
         for (TbEventRecord event : events.values()) {
             if (event.getKind() != TbEventKind.GRIT || event.getDelta() == null) {
@@ -361,10 +374,14 @@ public class GroupStateService {
             String player = event.getPlayer() == null ? "unknown" : event.getPlayer();
             newBalances.merge(player, event.getDelta(), Integer::sum);
             pooled += event.getDelta();
+            if (event.getDelta() > 0) {
+                newEarned.merge(player, event.getDelta(), Integer::sum);
+            }
         }
 
         unlockedByItem = unlocks;
         balances = newBalances;
+        earnedByPlayer = newEarned;
         pooledGrit = pooled;
     }
 }

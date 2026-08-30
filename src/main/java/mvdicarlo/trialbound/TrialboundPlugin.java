@@ -809,8 +809,8 @@ public class TrialboundPlugin extends Plugin {
             return;
         }
         String player = client.getLocalPlayer().getName();
-        sendChatMessage("Grit: " + groupState.getGritBalance(player) + " yours, "
-                + groupState.getPooledGrit() + " pooled.");
+        sendChatMessage("Personal Grit Earned: " + groupState.getGritEarned(player)
+                + ", Group Grit Earned: " + groupState.getPooledGrit() + ".");
     }
 
     private void OnUnlocksCountCommand(ChatMessage chatMessage, String message) {
@@ -878,6 +878,7 @@ public class TrialboundPlugin extends Plugin {
 
         unlockImage = ImageUtil.loadImageResource(getClass(), "/item-unlocked.png");
         IndexedSprite indexedSprite = ImageUtil.getImageIndexedSprite(chatBadgeImage(), client);
+        indexedSprite.setOffsetY(BADGE_OFFSET_Y);
 
         bronzemanIconOffset = modIcons.length;
 
@@ -887,14 +888,20 @@ public class TrialboundPlugin extends Plugin {
         client.setModIcons(newModIcons);
     }
 
-    private static final int BADGE_SIZE = 14;
+    private static final int BADGE_SIZE = 20;
+    /**
+     * Nudges the badge down from the client's default <img> anchor so a
+     * badge taller than the ~14px default icon size reads vertically
+     * centered against the name text instead of sitting high.
+     */
+    static final int BADGE_OFFSET_Y = (BADGE_SIZE - 14) / 2 + 2;
 
     /**
      * The sidebar logo as a chat badge: the source PNG carries transparent
      * padding and an off-center glyph, so crop to the opaque content, then
      * scale and center it to fill the badge box.
      */
-    private static BufferedImage chatBadgeImage() {
+    static BufferedImage chatBadgeImage() {
         BufferedImage src = ImageUtil.loadImageResource(TrialboundPlugin.class, "/trialbound_icon.png");
         int minX = src.getWidth(), minY = src.getHeight(), maxX = -1, maxY = -1;
         for (int y = 0; y < src.getHeight(); y++) {

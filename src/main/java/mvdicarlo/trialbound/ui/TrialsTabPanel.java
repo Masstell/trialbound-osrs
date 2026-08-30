@@ -42,9 +42,9 @@ public class TrialsTabPanel extends JPanel {
 
     /** One box per calendar period, biggest/rarest first; Weekly bundles its three difficulty slots. */
     private static final PeriodDef[] PERIODS = {
-            new PeriodDef("Monthly", new Color(0xb0, 0x7a, 0xf0), TrialType.MONTHLY),
-            new PeriodDef("Weekly", Color.WHITE, TrialType.WEEKLY_EASY, TrialType.WEEKLY_MEDIUM, TrialType.WEEKLY_HARD),
-            new PeriodDef("Daily", ColorScheme.BRAND_ORANGE, TrialType.DAILY),
+            new PeriodDef("Monthly", TrialType.MONTHLY),
+            new PeriodDef("Weekly", TrialType.WEEKLY_EASY, TrialType.WEEKLY_MEDIUM, TrialType.WEEKLY_HARD),
+            new PeriodDef("Daily", TrialType.DAILY),
     };
 
     private final TrialService trialService;
@@ -110,28 +110,33 @@ public class TrialsTabPanel extends JPanel {
         box.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         box.setBorder(BorderFactory.createEmptyBorder(8, 10, 8, 10));
 
-        JPanel header = new JPanel(new BorderLayout());
+        JPanel header = new JPanel();
         header.setOpaque(false);
+        header.setLayout(new BoxLayout(header, BoxLayout.Y_AXIS));
 
         JPanel titleGroup = new JPanel();
         titleGroup.setOpaque(false);
         titleGroup.setLayout(new BoxLayout(titleGroup, BoxLayout.X_AXIS));
+        titleGroup.setAlignmentX(Component.CENTER_ALIGNMENT);
         JLabel periodLabel = new JLabel(period.label.toUpperCase());
-        periodLabel.setFont(FontManager.getRunescapeSmallFont());
-        periodLabel.setForeground(period.color);
+        periodLabel.setFont(FontManager.getRunescapeBoldFont().deriveFont(18f));
+        periodLabel.setForeground(Color.WHITE);
         JLabel multLabel = new JLabel(slots.get(0).getType().getMultiplierLabel());
-        multLabel.setFont(FontManager.getRunescapeSmallFont());
+        multLabel.setFont(FontManager.getRunescapeBoldFont().deriveFont(18f));
         multLabel.setForeground(ColorScheme.PROGRESS_COMPLETE_COLOR);
-        multLabel.setBorder(BorderFactory.createEmptyBorder(0, 6, 0, 0));
+        multLabel.setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 0));
         titleGroup.add(periodLabel);
         titleGroup.add(multLabel);
-        header.add(titleGroup, BorderLayout.WEST);
+        header.add(titleGroup);
 
         JLabel timerLabel = new JLabel(
                 "Ends in " + formatRemaining(Duration.between(now, slots.get(0).getPeriodEndUtc())));
+        timerLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        timerLabel.setHorizontalAlignment(SwingConstants.CENTER);
         timerLabel.setFont(FontManager.getRunescapeSmallFont());
         timerLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
-        header.add(timerLabel, BorderLayout.EAST);
+        timerLabel.setBorder(BorderFactory.createEmptyBorder(2, 0, 0, 0));
+        header.add(timerLabel);
 
         box.add(header, BorderLayout.NORTH);
 
@@ -255,15 +260,13 @@ public class TrialsTabPanel extends JPanel {
         return minutes + "m";
     }
 
-    /** Static definition of one calendar period box: label, accent color, member slots. */
+    /** Static definition of one calendar period box: label and member slots. */
     private static final class PeriodDef {
         final String label;
-        final Color color;
         final TrialType[] types;
 
-        PeriodDef(String label, Color color, TrialType... types) {
+        PeriodDef(String label, TrialType... types) {
             this.label = label;
-            this.color = color;
             this.types = types;
         }
     }

@@ -73,6 +73,8 @@ public class ObtainedSyncService {
     private String loadedProfileKey;
     private boolean nudgedSync;
     private boolean nudgedSetting;
+    /** Whether the log was already SYNCED before this sync started; captured before state flips to SYNCING. */
+    private boolean wasSyncedBeforeThisSync;
 
     @Inject
     public ObtainedSyncService(Client client, ConfigManager configManager, EventBus eventBus,
@@ -150,6 +152,7 @@ public class ObtainedSyncService {
             return; // our own search/reset re-fires the setup script
         }
         syncInProgress = true;
+        wasSyncedBeforeThisSync = state == SyncState.SYNCED;
         state = SyncState.SYNCING;
         staging.clear();
         syncStartTick = lastEntryTick = client.getTickCount();
@@ -188,7 +191,7 @@ public class ObtainedSyncService {
 
     private void commit() {
         boolean changed = !obtained.equals(staging);
-        boolean firstSync = state != SyncState.SYNCED;
+        boolean firstSync = !wasSyncedBeforeThisSync;
         obtained.clear();
         obtained.addAll(staging);
         staging.clear();

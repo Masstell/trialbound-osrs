@@ -24,9 +24,9 @@ import net.runelite.client.util.ImageUtil;
 @Singleton
 public class LockedItemOverlay extends WidgetItemOverlay {
     /** Brightness of the dimmed copy (0 = black, 1 = unchanged). */
-    private static final float DIM_LUMINANCE = 0.6f;
+    private static final float DIM_LUMINANCE = 0.8f;
     /** Strength of the red blend applied on top of the dimmed copy (0 = none, 1 = full red). */
-    private static final float RED_TINT_STRENGTH = 0.25f;
+    private static final float RED_TINT_STRENGTH = 0.15f;
     private static final int TINT_R = 255;
     private static final int TINT_G = 40;
     private static final int TINT_B = 40;
